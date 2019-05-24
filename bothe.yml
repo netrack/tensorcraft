@@ -1,0 +1,4 @@
+---
+- name: dns-nn1
+  keras:
+    path: dns.h5
