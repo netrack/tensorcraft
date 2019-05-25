@@ -1,4 +1,8 @@
 ---
-- name: dns-nn1
-  keras:
-    path: dns.h5
+server:
+  addr: localhost
+  port: 8080
+models:
+  - name: dns-nn1
+    keras:
+      path: dns.h5
