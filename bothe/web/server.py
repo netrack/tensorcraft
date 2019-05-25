@@ -20,10 +20,10 @@ class Server:
         super().__init__()
         self.app = aiohttp.web.Application()
 
-    def handle(self, model):
+    def handle(self, name, model):
         # TODO: implement auto-generated routes.
         self.app.add_routes([
-            aiohttp.web.post("/predict", Handler(model).handle)])
+            aiohttp.web.post("/%s/predict" % name, Handler(model).handle)])
 
     def serve(self):
         aiohttp.web.run_app(self.app)
