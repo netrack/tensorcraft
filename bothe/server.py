@@ -1,9 +1,9 @@
 import aiohttp
 
 import bothe.config
-import bothe.plugin
+import bothe.constants
 import bothe.plugin.error
-import bothe.web.server
+import bothe.web.app
 
 
 class Server:
@@ -50,11 +50,11 @@ class Server:
 
             self.models[name] = plugin
 
-        s = bothe.web.server.Server()
+        app = bothe.web.app.Application()
         for name, model in self.models.items():
-            s.handle(name, self._predict_handler(model))
+            app.handle(name, self._predict_handler(model))
 
-        s.serve(host=config["server"]["host"],
+        app.run(host=config["server"]["host"],
                 port=config["server"]["port"])
 
 
@@ -63,4 +63,4 @@ def serve(plugins):
 
 
 if __name__ == "__main__":
-    serve(bothe.plugin.ALL)
+    serve(plugins=bothe.constants.PLUGINS)

@@ -1,10 +1,11 @@
 import numpy
 import schema
 
+import bothe.plugin.base
 import bothe.plugin.error
 
 
-class Keras:
+class Keras(bothe.plugin.base.Plugin):
     """Module to serve Keras machine-learning models."""
 
     def __init__(self):
@@ -17,7 +18,6 @@ class Keras:
         """Configuration parameters of the plugin."""
         return {
             "path": schema.And(str, len),
-            schema.Optional("backend", default="tensorflow"): str,
         }
 
     def compile(self, config):
