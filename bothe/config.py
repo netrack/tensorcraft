@@ -2,6 +2,21 @@ import schema
 import yaml
 
 
+class DuplicateNameError(Exception):
+    """Exception raised for duplicating model names in the configuration.
+
+    Attributes:
+        name -- duplicating model's name
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+
+    def __str__(self):
+        return "Duplicate model name '%(name)s' found." % {"name": self.name}
+
+
 class Config:
     """The configuration loader and validator."""
 
@@ -21,7 +36,7 @@ class Config:
 
         self.schema = schema.Schema({
             "server": {
-              schema.Optional("addr", default="localhost"): str,
+              schema.Optional("host", default="localhost"): str,
               schema.Optional("port", default="8080"): int,
             },
             # It is expected to serve multiple models in a single server.
@@ -33,9 +48,16 @@ class Config:
         with open(self.DEFAULT_FILEPATH, "r") as f:
             config_dict = yaml.full_load(f)
 
-        return self.schema.validate(config_dict)
+        config = self.schema.validate(config_dict)
+        names = set()
 
+        # Ensure the uniqueness of the model's name.
+        for m in config["models"]:
+            if m["name"] in names:
+                raise DuplicateNameError(m["name"])
+            names.add(m["name"])
+        return config
 
 def load(plugins):
-    """A code surgar to load the configuration."""
+    """Code surgar to load the server's configuration."""
     return Config(plugins).load()

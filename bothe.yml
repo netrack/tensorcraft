@@ -1,6 +1,6 @@
 ---
 server:
-  addr: localhost
+  host: localhost
   port: 8080
 models:
   - name: dns-nn1

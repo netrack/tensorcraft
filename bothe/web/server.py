@@ -1,29 +1,26 @@
 import aiohttp
 import aiohttp.web
-import json
 
 
-class Handler:
+class JSONHandler:
 
-    def __init__(self, model):
-        self.model = model
+    def __init__(self, callable):
+        self.callable = callable
 
-    async def handle(self, request):
-        req = json.loads(await request.text())
-        p = self.model.predict(req)
-        return aiohttp.web.Response(text=json.dumps(p.tolist())+"\n")
+    async def __call__(self, request):
+        req = await request.json()
+        resp = self.callable(req)
+        return aiohttp.web.json_response(resp)
 
 
 class Server:
 
     def __init__(self):
-        super().__init__()
         self.app = aiohttp.web.Application()
 
     def handle(self, name, model):
-        # TODO: implement auto-generated routes.
-        self.app.add_routes([
-            aiohttp.web.post("/%s/predict" % name, Handler(model).handle)])
+        route = "/models/%(name)s/predict" % {"name": name}
+        self.app.add_routes([aiohttp.web.post(route, JSONHandler(model))])
 
-    def serve(self):
-        aiohttp.web.run_app(self.app)
+    def serve(self, host=None, port=None):
+        aiohttp.web.run_app(self.app, host=host, port=port)
