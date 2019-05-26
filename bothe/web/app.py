@@ -13,7 +13,7 @@ class JSONHandler:
         return aiohttp.web.json_response(resp)
 
 
-class Server:
+class Application:
 
     def __init__(self):
         self.app = aiohttp.web.Application()
@@ -22,5 +22,5 @@ class Server:
         route = "/models/%(name)s/predict" % {"name": name}
         self.app.add_routes([aiohttp.web.post(route, JSONHandler(model))])
 
-    def serve(self, host=None, port=None):
+    def run(self, host=None, port=None):
         aiohttp.web.run_app(self.app, host=host, port=port)

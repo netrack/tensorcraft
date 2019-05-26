@@ -23,8 +23,6 @@ class Config:
     DEFAULT_FILEPATH = "bothe.yml"
 
     def __init__(self, plugins):
-        super().__init__()
-
         # The schema of the models configuration, this should include
         # all available plugin configurations.
         models_schema = {
@@ -57,6 +55,7 @@ class Config:
                 raise DuplicateNameError(m["name"])
             names.add(m["name"])
         return config
+
 
 def load(plugins):
     """Code surgar to load the server's configuration."""
