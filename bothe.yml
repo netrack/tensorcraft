@@ -5,4 +5,4 @@ server:
 models:
   - name: dns-nn1
     keras:
-      path: dns.h5
+      local: dns.h5
