@@ -23,7 +23,7 @@ class InputShapeError(Exception):
 
 class Model:
 
-    def __init__(self, name=[str], tag=[str], model=None):
+    def __init__(self, name: str, tag: str, model=None):
         self.model = model
         self.name = name
         self.tag = tag
