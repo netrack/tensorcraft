@@ -9,8 +9,9 @@ import bothe.handlers
 class Server:
     """Serve the models."""
 
-    def __init__(self):
+    def __init__(self, config):
         self.models = bothe.storage.local.FileSystem(".var/lib/bothe")
+        self.config = config
 
     async def prepare_response(self, request, response):
         response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
