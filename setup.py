@@ -25,7 +25,11 @@ setuptools.setup(
     classifiers=[
       "Intended Audience :: Developers",
       "License :: OSI Approved :: MIT License",
-    ]
+    ],
 
-    package=setuptools.find_packages(exclude=["tests"]),
+    packages=setuptools.find_packages(exclude=["tests"]),
+
+    entry_points={
+        "console_scripts": ["bothe = bothe.shell.main:main"],
+    },
 )
