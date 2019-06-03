@@ -1,13 +1,14 @@
 import bothe
+import bothe.shell.app
+import bothe.shell.commands
 
-from bothe.shell import app
-from bothe.shell.commands import push
 
 
 
 def main():
     #try:
-        a = app.App(prog="bothe", modules=[push.Push])
+        a = bothe.shell.app.App(prog="bothe", modules=[
+            bothe.shell.commands.Server])
 
         a.argument(["-s", "--service-url"],
             dict(help="service endpoint",
