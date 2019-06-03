@@ -71,6 +71,7 @@ class Server(Command):
               default="/var/lib/bothe"))]
 
     def handle(self, args):
+        import bothe.server
         s = bothe.server.Server(args)
         s.serve()
 
@@ -120,7 +121,6 @@ class Remove(Command):
               help="model tag"))]
 
     def handle(self, args):
-        import bothe.server
         client = bothe.client.Client()
 
         task = client.remove(args.name, args.tag)
