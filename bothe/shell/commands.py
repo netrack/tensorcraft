@@ -68,7 +68,7 @@ class Server(Command):
         (["--data-root"],
          dict(metavar="PATH",
               help="root directory of persistent state",
-              default="/var/lib/bothe"))]
+              default=".var/lib/bothe"))]
 
     def handle(self, args):
         import bothe.server

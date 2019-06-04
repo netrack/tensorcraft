@@ -26,7 +26,7 @@ class Push:
             raise aiohttp.web.HTTPBadRequest(text="request has no body")
 
         model_stream = io.BytesIO(await req.read())
-        self.models.save(name, tag, model_stream)
+        await self.models.save(name, tag, model_stream)
 
         return aiohttp.web.Response(status=aiohttp.web.HTTPCreated.status_code)
 
@@ -56,7 +56,7 @@ class Predict:
             raise aiohttp.web.HTTPBadRequest(text="request has no body")
 
         body = await req.json()
-        model = self.models.load(name, tag)
+        model = await self.models.load(name, tag)
 
         predictions = model.predict(x=body["x"])
         return aiohttp.web.json_response(dict(y=predictions))
@@ -80,9 +80,9 @@ class List:
         Args:
             req -- empty request
         """
-        models = map(lambda m: m.todict(), self.models.all())
-        return aiohttp.web.json_response(list(models))
-
+        models = await self.models.all()
+        dicts = map(lambda m: m.todict(), models)
+        return aiohttp.web.json_response(list(dicts))
 
 
 class Remove:
@@ -95,5 +95,5 @@ class Remove:
         name = req.match_info.get("name")
         tag = req.match_info.get("tag")
 
-        self.models.delete(name, tag)
+        await self.models.delete(name, tag)
         return aiohttp.web.Response(status=aiohttp.web.HTTPOk.status_code)
