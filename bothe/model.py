@@ -22,15 +22,25 @@ class InputShapeError(Exception):
 
 
 class Model:
+    """Machine-leaning model
+
+    Attributes:
+        model -- instance of keras model
+        name -- the name of the model
+        tag -- the tag of the model
+    """
 
     def __init__(self, name: str, tag: str, model=None):
         self.model = model
         self.name = name
         self.tag = tag
 
-    def predict(self, x):
-        self.model.summary()
+    def load(self, loader):
+        """Load the model from the given loader."""
+        raise NotImplementedError
 
+    def predict(self, x):
+        #self.model.summary()
         x = numpy.array(x)
 
         # Calculate the shape of the input data and validate it with the

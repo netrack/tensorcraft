@@ -2,15 +2,18 @@ import aiohttp
 import aiohttp.web
 
 import bothe
-import bothe.storage.local
 import bothe.handlers
+import bothe.storage.local
 
 
 class Server:
     """Serve the models."""
 
     def __init__(self, config):
-        self.models = bothe.storage.local.FileSystem(".var/lib/bothe")
+        storage = bothe.storage.local.FileSystem(path=config.data_root)
+        storage = bothe.storage.local.Cache(storage)
+
+        self.models = storage
         self.config = config
 
     async def prepare_response(self, request, response):

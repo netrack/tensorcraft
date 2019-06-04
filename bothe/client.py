@@ -7,7 +7,6 @@ import sys
 import typing
 
 
-
 async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
     def progress(loaded, total, bar_len=30):
         filled_len = int(round(bar_len * loaded / total))
