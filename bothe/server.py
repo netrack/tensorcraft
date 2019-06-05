@@ -36,7 +36,7 @@ class Server:
                 "/models",
                 bothe.handlers.List(self.models)),
             ])
-        aiohttp.web.run_app(app)
+        aiohttp.web.run_app(app, host=self.config.host, port=self.config.port)
 
 
 if __name__ == "__main__":

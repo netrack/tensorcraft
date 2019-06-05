@@ -4,6 +4,7 @@ import logging
 import pathlib
 import humanize
 import sys
+import tarfile
 import typing
 
 
@@ -41,25 +42,44 @@ async def async_reader(path: pathlib.Path, chunk_size=64*1024) -> bytes:
 
 
 class Client:
+    """A client to do basic operations remotely
 
-    def __init__(self, service_url="http://localhost:8080"):
+    An asynchronous client used to publish, remove and list
+    available models.
+
+    TODO: move the client implementation into the standalone repo.
+
+    Attributes:
+        service_url -- service endpoint
+    """
+
+    def __init__(self, service_url: str):
         self.service_url = service_url
 
     async def push(self, name: str, tag: str, path: pathlib.Path):
+        """Push the model to the server.
+
+        The model is expected to be a tarball with in a SaveModel
+        format.
+        """
         if not path.exists():
-            print("{0} does not exist".format(path))
-            return
+            raise ValueError("{0} does not exist".format(path))
+        if not tarfile.is_tarfile(str(path)):
+            raise ValueError("{0} is not a tar file".format(path))
 
         async with aiohttp.ClientSession() as session:
-            url = self.service_url + "/models/{0}/{1}".format(name, tag)
+            url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
             reader = async_progress(path, async_reader(path))
 
-            print("loading model {0}:{1}".format(name, tag))
             await session.put(url, data=reader)
 
     async def remove(self, name: str, tag: str):
+        """Remove the model from the server.
+
+        Model raises ModelNotFoundError when the model is missing.
+        """
         async with aiohttp.ClientSession() as session:
-            url = self.service_url + "/models/{0}/{1}".format(name, tag)
+            url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
             await session.delete(url)
 
     async def list(self):

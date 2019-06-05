@@ -11,7 +11,6 @@ import tensorflow
 import bothe.model
 
 
-
 class FileSystem:
     """Storage of models based on ordinary file system.
 
