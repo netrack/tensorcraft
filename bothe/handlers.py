@@ -1,7 +1,8 @@
 import aiohttp.web
 import io
+import json
 
-from bothe.model import Model
+from bothe.model import Model, InputShapeError
 
 
 class Push:
@@ -55,10 +56,14 @@ class Predict:
         if not req.can_read_body:
             raise aiohttp.web.HTTPBadRequest(text="request has no body")
 
-        body = await req.json()
-        model = await self.models.load(name, tag)
+        try:
+            body = await req.json()
+            model = await self.models.load(name, tag)
 
-        predictions = model.predict(x=body["x"])
+            predictions = model.predict(x=body["x"])
+        except (InputShapeError, json.decoder.JSONDecodeError) as e:
+            raise aiohttp.web.HTTPBadRequest(text=str(e))
+
         return aiohttp.web.json_response(dict(y=predictions))
 
 

@@ -15,10 +15,8 @@ class InputShapeError(Exception):
         self.actual_dims = tuple(actual_dims)
 
     def __str__(self):
-        return ("Input shape is '{expected_dims}', while "
-                "'{actual_dims}' is given.").format(
-                    expected_dims=self.expected_dims,
-                    actual_dims=self.actual_dims)
+        return "Input shape is {0}, while {1} is given.".format(
+            self.expected_dims, self.actual_dims)
 
 
 class Model:
@@ -40,7 +38,6 @@ class Model:
         raise NotImplementedError
 
     def predict(self, x):
-        #self.model.summary()
         x = numpy.array(x)
 
         # Calculate the shape of the input data and validate it with the

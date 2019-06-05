@@ -1,11 +1,18 @@
 import argparse
 import asyncio
+import enum
 import pathlib
 
 import bothe.client
 
 
+class ExitStatus(enum.Enum):
+    Success = 0
+    Failure = 1
+
+
 class Command:
+    """Shell sub-command."""
 
     __attributes__ = [
         "name",
@@ -55,6 +62,7 @@ class Command:
 
 
 class Server(Command):
+    """Server shell command used to run a server."""
 
     name = "server"
     aliases = ["s"]
@@ -64,7 +72,11 @@ class Server(Command):
         (["-H", "--host"],
          dict(metavar="HOST",
               help="address to listen to",
-              default="::")),
+              default="localhost")),
+        (["-p", "--port"],
+         dict(metavar="PORT",
+              help="port to listen to",
+              default="5678")),
         (["--data-root"],
          dict(metavar="PATH",
               help="root directory of persistent state",
@@ -74,9 +86,11 @@ class Server(Command):
         import bothe.server
         s = bothe.server.Server(args)
         s.serve()
+        return ExitStatus.Success.value
 
 
 class Push(Command):
+    """Shell command to push model to the server."""
 
     name = "push"
     aliases = ["p"]
@@ -90,6 +104,7 @@ class Push(Command):
         (["-t", "--tag"],
          dict(metavar="TAG",
               type=str,
+              default="latest",
               help="model tag")),
         (["path"],
          dict(metavar="PATH",
@@ -97,11 +112,18 @@ class Push(Command):
               help="model location"))]
 
     def handle(self, args):
-        client = bothe.client.Client()
+        print("loading model {0}:{1}".format(args.name, args.tag))
+        client = bothe.client.Client(service_url=args.service_url)
 
         path = pathlib.Path(args.path)
         task = client.push(args.name, args.tag, path)
-        asyncio.run(task)
+
+        try:
+            asyncio.run(task)
+        except Exception as e:
+            print("failed to push model, {0}".format(e))
+            return ExitStatus.Failure.value
+        return ExitStatus.Success.value
 
 
 class Remove(Command):
@@ -115,16 +137,23 @@ class Remove(Command):
          dict(metavar="NAME",
               type=str,
               help="model name")),
+        (["-q", "--quiet"],
+         dict(action="store_true",
+              help="do not return error missing model")),
         (["-t", "--tag"],
          dict(metavar="TAG",
               type=str,
               help="model tag"))]
 
     def handle(self, args):
-        client = bothe.client.Client()
-
+        client = bothe.client.Client(service_url=args.service_url)
         task = client.remove(args.name, args.tag)
-        asyncio.run(task)
+        try:
+            asyncio.run(task)
+        except Exception as e:
+            print("failed to remove model, {0}".format(e))
+            return ExitStatus.Failure.value
+        return ExitStatus.Success.value
 
 
 class List(Command):
@@ -136,6 +165,7 @@ class List(Command):
     arguments = []
 
     def handle(self, args):
+        print(args)
         client = bothe.client.Client()
         task = client.list()
         asyncio.run(task)

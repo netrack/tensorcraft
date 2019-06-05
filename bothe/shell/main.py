@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 import bothe
 import bothe.shell.commands
@@ -21,7 +22,7 @@ class App:
 
     def start(self):
         args = self.parser.parse_args()
-        args.func(args=args)
+        return args.func(args=args)
 
 
 def main():
@@ -32,14 +33,14 @@ def main():
 
     a.argument(["-s", "--service-url"],
         dict(help="service endpoint",
-             default="http://127.0.0.1:8080"))
+             default="http://localhost:5678"))
 
     a.argument(["-v", "--version"],
         dict(help="print version and exit",
              action="version",
              version="%(prog)s {0}".format(bothe.__version__)))
 
-    a.start()
+    sys.exit(a.start())
 
 
 if __name__ == "__main__":
