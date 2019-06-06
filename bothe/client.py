@@ -1,11 +1,15 @@
 import aiofiles
 import aiohttp
+import aiohttp.web
 import logging
 import pathlib
 import humanize
 import sys
 import tarfile
 import typing
+
+
+import bothe.model
 
 
 async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
@@ -76,16 +80,18 @@ class Client:
     async def remove(self, name: str, tag: str):
         """Remove the model from the server.
 
-        Model raises ModelNotFoundError when the model is missing.
+        Method raises error when the model is missing.
         """
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
-            await session.delete(url)
+            resp = await session.delete(url)
+
+            if resp.status == aiohttp.web.HTTPNotFound.status_code:
+                raise bothe.model.NotFoundError(name, tag)
 
     async def list(self):
         async with aiohttp.ClientSession() as session:
             url = self.service_url + "/models"
 
             async with session.get(url) as resp:
-                for model in await resp.json():
-                    print("{name}:{tag}".format(**model))
+                return await resp.json()

@@ -2,7 +2,7 @@ import aiohttp.web
 import io
 import json
 
-from bothe.model import Model, InputShapeError
+from bothe.model import Model, InputShapeError, NotFoundError
 
 
 class Push:
@@ -100,5 +100,8 @@ class Remove:
         name = req.match_info.get("name")
         tag = req.match_info.get("tag")
 
-        await self.models.delete(name, tag)
+        try:
+            await self.models.delete(name, tag)
+        except NotFoundError as e:
+            raise aiohttp.web.HTTPNotFound(text=str(e))
         return aiohttp.web.Response(status=aiohttp.web.HTTPOk.status_code)

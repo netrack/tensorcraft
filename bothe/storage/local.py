@@ -57,8 +57,11 @@ class FileSystem:
 
     async def delete(self, name: str, tag: str) -> None:
         """Remove model with the given name and tag."""
-        path = self._model_path(name, tag)
-        await self.run(shutil.rmtree, path, ignore_errors=False)
+        try:
+            path = self._model_path(name, tag)
+            await self.run(shutil.rmtree, path, ignore_errors=False)
+        except FileNotFoundError:
+            raise bothe.model.NotFoundError(name, tag)
 
     async def load(self, name: str, tag: str) -> bothe.model.Model:
         """Load model with the given name and tag.
