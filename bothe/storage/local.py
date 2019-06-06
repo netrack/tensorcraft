@@ -21,6 +21,7 @@ class FileSystem:
     def __init__(self, path):
         self.path = pathlib.Path(path)
         self.executor = concurrent.futures.ThreadPoolExecutor()
+        self.strategy = tensorflow.distribute.MirroredStrategy()
 
         # Since the construction of this object is performed before the
         # start of the event loop, it is fine to call it just like this.
@@ -68,9 +69,12 @@ class FileSystem:
 
         Model is loaded using TensorFlow SaveModel format.
         """
-        path = self._model_path(name, tag)
-        func = tensorflow.keras.experimental.load_from_saved_model
+        def func(self, path: str):
+            with self.strategy.scope():
+                return tensorflow.keras.experimental.load_from_saved_model(
+                    path)
 
+        path = self._model_path(name, tag)
         m = await self.run(func, path)
         return bothe.model.Model(name, tag, m)
 
