@@ -40,7 +40,7 @@ def main():
              action="version",
              version="%(prog)s {0}".format(bothe.__version__)))
 
-    sys.exit(a.start())
+    sys.exit(a.start().value)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,4 @@
 import numpy
-import tensorflow as tf
 
 
 class InputShapeError(Exception):
@@ -17,6 +16,22 @@ class InputShapeError(Exception):
     def __str__(self):
         return "Input shape is {0}, while {1} is given.".format(
             self.expected_dims, self.actual_dims)
+
+
+class NotFoundError(Exception):
+    """Exception raised on missing model
+
+    Attributes:
+        name --- model name
+        tag -- model tag
+    """
+
+    def __init__(self, name: str, tag: str):
+        self.name = name
+        self.tag = tag
+
+    def __str__(self):
+        return "Model {0}:{1} not found".format(self.name, self.tag)
 
 
 class Model:

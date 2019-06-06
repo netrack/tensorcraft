@@ -4,6 +4,7 @@ import enum
 import pathlib
 
 import bothe.client
+import bothe.model
 
 
 class ExitStatus(enum.Enum):
@@ -57,8 +58,9 @@ class Command:
             command = command_class(subparsers)
             self.subcommands[command_class.__name__] = command
 
-    def handle(self, args):
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
         self.subparser.print_help()
+        return ExitStatus.Success
 
 
 class Server(Command):
@@ -82,11 +84,11 @@ class Server(Command):
               help="root directory of persistent state",
               default=".var/lib/bothe"))]
 
-    def handle(self, args):
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
         import bothe.server
         s = bothe.server.Server(args)
         s.serve()
-        return ExitStatus.Success.value
+        return ExitStatus.Success
 
 
 class Push(Command):
@@ -111,7 +113,7 @@ class Push(Command):
               type=str,
               help="model location"))]
 
-    def handle(self, args):
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
         print("loading model {0}:{1}".format(args.name, args.tag))
         client = bothe.client.Client(service_url=args.service_url)
 
@@ -121,12 +123,13 @@ class Push(Command):
         try:
             asyncio.run(task)
         except Exception as e:
-            print("failed to push model, {0}".format(e))
-            return ExitStatus.Failure.value
-        return ExitStatus.Success.value
+            print("Failed to push model. {0}".format(e))
+            return ExitStatus.Failure
+        return ExitStatus.Success
 
 
 class Remove(Command):
+    """Shell command to remove the model from server."""
 
     name = "remove"
     aliases = ["rm"]
@@ -139,24 +142,30 @@ class Remove(Command):
               help="model name")),
         (["-q", "--quiet"],
          dict(action="store_true",
-              help="do not return error missing model")),
+              help="do not return error on missing model")),
         (["-t", "--tag"],
          dict(metavar="TAG",
               type=str,
               help="model tag"))]
 
-    def handle(self, args):
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
         client = bothe.client.Client(service_url=args.service_url)
         task = client.remove(args.name, args.tag)
+
         try:
             asyncio.run(task)
+        except bothe.model.NotFoundError as e:
+            if not args.quiet:
+                print("{0}.".format(e))
+                return ExitStatus.Failure
         except Exception as e:
-            print("failed to remove model, {0}".format(e))
-            return ExitStatus.Failure.value
-        return ExitStatus.Success.value
+            print("Failed to remove model. {0}.".format(e))
+            return ExitStatus.Failure
+        return ExitStatus.Success
 
 
 class List(Command):
+    """Shell command to list models from the server."""
 
     name = "list"
     aliases = ["ls"]
@@ -164,8 +173,14 @@ class List(Command):
 
     arguments = []
 
-    def handle(self, args):
-        print(args)
-        client = bothe.client.Client()
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
+        client = bothe.client.Client(service_url=args.service_url)
         task = client.list()
-        asyncio.run(task)
+
+        try:
+            for model in asyncio.run(task):
+                print("{name}:{tag}".format(**model))
+        except Exception as e:
+            print("Failed to list models. {0}.".format(e))
+            return ExitStatus.Failure
+        return ExitStatus.Success
