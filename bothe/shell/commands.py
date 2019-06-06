@@ -82,7 +82,10 @@ class Server(Command):
         (["--data-root"],
          dict(metavar="PATH",
               help="root directory of persistent state",
-              default=".var/lib/bothe"))]
+              default=".var/lib/bothe")),
+        (["--strategy"],
+         dict(metavar="STRATEGY",
+              help="model execution strategy"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         import bothe.server
