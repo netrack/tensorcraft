@@ -69,7 +69,7 @@ class FileSystem:
 
         Model is loaded using TensorFlow SaveModel format.
         """
-        def func(self, path: str):
+        def func(path: str):
             with self.strategy.scope():
                 return tensorflow.keras.experimental.load_from_saved_model(
                     path)
