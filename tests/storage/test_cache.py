@@ -1,19 +1,19 @@
-import asyncio
+import bothe.asynclib
+import tests.asynctest
 import unittest
+import unittest.mock
 
 from bothe.storage import local
-from tests import asynctest
-from unittest import mock
 
 
 class TestCache(unittest.TestCase):
 
     def test_all(self):
-        storage = mock.create_autospec(local.FileSystem)
-        storage.all = asynctest.MagicMock(return_value=[])
+        storage = unittest.mock.create_autospec(local.FileSystem)
+        storage.all = tests.asynctest.MagicMock(return_value=[])
 
         cache = local.Cache(storage)
-        models = asyncio.run(cache.all())
+        models = bothe.asynclib.run(cache.all())
 
         storage.all.assert_called()
         self.assertEqual(models, [])
