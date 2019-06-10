@@ -32,13 +32,13 @@ def main():
                                    bothe.shell.commands.List])
 
     a.argument(["-s", "--service-url"],
-        dict(help="service endpoint",
-             default="http://localhost:5678"))
+               dict(help="service endpoint",
+                    default="http://localhost:5678"))
 
     a.argument(["-v", "--version"],
-        dict(help="print version and exit",
-             action="version",
-             version="%(prog)s {0}".format(bothe.__version__)))
+               dict(help="print version and exit",
+                    action="version",
+                    version="%(prog)s {0}".format(bothe.__version__)))
 
     sys.exit(a.start().value)
 

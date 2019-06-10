@@ -1,7 +1,9 @@
 import aiohttp
 import aiohttp.web
+import logging
 
 import bothe
+import bothe.logging
 import bothe.handlers
 import bothe.storage.local
 
@@ -20,7 +22,10 @@ class Server:
         response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
 
     def serve(self):
-        app = aiohttp.web.Application()
+        #logger = logging.getLogger("aiohttp.server")
+        #logger.disabled = True
+
+        app = aiohttp.web.Application(logger=None)
         app.on_response_prepare.append(self.prepare_response)
         app.add_routes([
             aiohttp.web.put(
@@ -36,7 +41,9 @@ class Server:
                 "/models",
                 bothe.handlers.List(self.models)),
             ])
-        aiohttp.web.run_app(app, host=self.config.host, port=self.config.port)
+        aiohttp.web.run_app(
+            app, print=None,
+            host=self.config.host, port=self.config.port)
 
 
 if __name__ == "__main__":
