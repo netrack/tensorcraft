@@ -1,4 +1,5 @@
 import numpy
+import tensorflow as tf
 
 
 class InputShapeError(Exception):
@@ -34,37 +35,58 @@ class NotFoundError(Exception):
         return "Model {0}:{1} not found".format(self.name, self.tag)
 
 
+class NotLoadedError(Exception):
+    """Exception raised on attempt to use not loaded model.
+
+    Attributes:
+        name -- model name
+        tag -- model tag
+    """
+
+    def __init__(self, name: str, tag: str):
+        self.name = name
+        self.tag = tag
+
+    def __str__(self):
+        return "Model {0}:{1} is not loaded".format(self.name, self.tag)
+
+
+
 class Model:
     """Machine-leaning model
 
     Attributes:
-        model -- instance of keras model
         name -- the name of the model
         tag -- the tag of the model
     """
 
-    def __init__(self, name: str, tag: str, model=None):
-        self.model = model
+    def __init__(self, name: str, tag: str):
+        self._model = None
         self.name = name
         self.tag = tag
 
-    def load(self, loader):
-        """Load the model from the given loader."""
-        raise NotImplementedError
+    def load(self, path: str, strategy: tf.distribute.Strategy):
+        """Load the model by the given path."""
+        with strategy.scope():
+            self._model = tf.keras.experimental.load_from_saved_model(path)
+        return self
 
     def predict(self, x):
+        if not self._model:
+            raise NotLoadedError(self.name, self.tag)
+
         x = numpy.array(x)
 
         # Calculate the shape of the input data and validate it with the
         # model parameters. This exception is handled by the server in
         # order to return an appropriate error to the client.
-        _, *expected_dims = self.model.input_shape
+        _, *expected_dims = self._model.input_shape
         _, *actual_dims = x.shape
 
         if expected_dims != actual_dims:
             raise InputShapeError(expected_dims, actual_dims)
 
-        return self.model.predict(x).tolist()
+        return self._model.predict(x).tolist()
 
     def todict(self):
         return dict(name=self.name, tag=self.tag)

@@ -1,4 +1,3 @@
-import absl.logging
 import logging
 import os
 
@@ -13,12 +12,4 @@ for h in logging.root.handlers:
     logging.root.removeHandler(h)
 
 
-logging.basicConfig(level=logging.NOTSET, format="%(message)s")
-logger = logging.getLogger("bothe")
-
-
-debug = logger.debug
-info = logger.info
-warning = logger.warning
-error = logger.error
-critical = logger.critical
+internal_logger = logging.getLogger("bothe")

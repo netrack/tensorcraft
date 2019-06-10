@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import functools
 import io
+import logging
 import pathlib
 import shutil
 import tarfile
@@ -19,10 +20,12 @@ class FileSystem:
     under the data root path.
     """
 
-    def __init__(self, path):
+    def __init__(self, path: str,
+                 logger: logging.Logger=bothe.logging.internal_logger):
         self.path = pathlib.Path(path)
         self.executor = concurrent.futures.ThreadPoolExecutor()
         self.strategy = tensorflow.distribute.MirroredStrategy()
+        self.logger = logger
 
         # Since the construction of this object is performed before the
         # start of the event loop, it is fine to call it just like this.
@@ -36,7 +39,7 @@ class FileSystem:
     def run(self, func, *args, **kwargs):
         """Run the given function within an instance executor."""
         f = functools.partial(func, *args, **kwargs)
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         return loop.run_in_executor(self.executor, f)
 
     async def all(self) -> typing.Sequence[bothe.model.Model]:
@@ -55,7 +58,7 @@ class FileSystem:
         under the name "model_name@model_tag".
         """
         dest = self._model_path(name, tag)
-        bothe.logging.info("Pushing model image %s:%s to %s", name, tag, dest)
+        self.logger.info("Pushing model image %s:%s to %s", name, tag, dest)
         await self.run(extract_tar, fileobj=model, dest=dest)
 
     async def delete(self, name: str, tag: str) -> None:
@@ -71,14 +74,11 @@ class FileSystem:
 
         Model is loaded using TensorFlow SaveModel format.
         """
-        def func(path: str):
-            with self.strategy.scope():
-                return tensorflow.keras.experimental.load_from_saved_model(
-                    path)
-
+        m = bothe.model.Model(name, tag)
         path = self._model_path(name, tag)
-        m = await self.run(func, path)
-        return bothe.model.Model(name, tag, m)
+
+        m = await self.run(m.load, path, self.strategy)
+        return m
 
 
 class Cache:
@@ -88,7 +88,9 @@ class Cache:
     to the parent storage when the model is not found locally.
     """
 
-    def __init__(self, storage):
+    def __init__(self, storage,
+                 logger: logging.Logger=bothe.logging.internal_logger):
+        self.logger = logger
         self.storage = storage
         self.lock = asyncio.Lock()
         self.models = {}
