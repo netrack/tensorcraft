@@ -5,10 +5,11 @@ import io
 import pathlib
 import shutil
 import tarfile
-import typing
 import tensorflow
+import typing
 
 import bothe.model
+import bothe.logging
 
 
 class FileSystem:
@@ -54,6 +55,7 @@ class FileSystem:
         under the name "model_name@model_tag".
         """
         dest = self._model_path(name, tag)
+        bothe.logging.info("Pushing model image %s:%s to %s", name, tag, dest)
         await self.run(extract_tar, fileobj=model, dest=dest)
 
     async def delete(self, name: str, tag: str) -> None:
