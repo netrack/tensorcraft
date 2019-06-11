@@ -29,7 +29,6 @@ setuptools.setup(
 
     packages=setuptools.find_packages(exclude=["tests"]),
     install_requires=[
-        "aiodns>=2.0.0",
         "aiofiles>=0.4.0",
         "aiohttp>=3.5.4",
         "humanize>=0.5.1",
