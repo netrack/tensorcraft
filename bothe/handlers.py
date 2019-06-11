@@ -2,7 +2,8 @@ import aiohttp.web
 import io
 import json
 
-from bothe.model import Model, InputShapeError, NotFoundError
+from bothe.model import Model
+from bothe.errors import InputShapeError, NotFoundError
 
 
 class Push:
