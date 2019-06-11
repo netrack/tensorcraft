@@ -4,12 +4,12 @@ import aiohttp.web
 import logging
 import pathlib
 import humanize
-import sys
 import tarfile
 import typing
 
 
 import bothe.model
+import bothe.asynclib
 
 
 async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
@@ -21,8 +21,7 @@ async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
         total = humanize.naturalsize(total).replace(" ", "")
 
         bar = "=" * filled_len + " " * empty_len
-        sys.stdout.write("[{0}] {1}/{2}\r".format(bar, loaded, total))
-        sys.stdout.flush()
+        print("[{0}] {1}/{2}\r".format(bar, loaded, total), end="", flush=True)
 
     total = path.stat().st_size
     loaded = 0
@@ -33,16 +32,8 @@ async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
         loaded += len(chunk)
 
     progress(loaded, total)
-    sys.stdout.write("\n")
-    sys.stdout.flush()
+    print("", flush=True)
 
-
-async def async_reader(path: pathlib.Path, chunk_size=64*1024) -> bytes:
-    async with aiofiles.open(str(path), "rb") as f:
-        chunk = await f.read(chunk_size)
-        while len(chunk):
-            yield chunk
-            chunk = await f.read(chunk_size)
 
 
 class Client:
@@ -73,7 +64,7 @@ class Client:
 
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
-            reader = async_progress(path, async_reader(path))
+            reader = async_progress(path, bothe.asynclib.reader(path))
 
             await session.put(url, data=reader)
 
@@ -90,6 +81,7 @@ class Client:
                 raise bothe.model.NotFoundError(name, tag)
 
     async def list(self):
+        """List available models on the server."""
         async with aiohttp.ClientSession() as session:
             url = self.service_url + "/models"
 
