@@ -6,11 +6,11 @@ import logging
 import pathlib
 import shutil
 import tarfile
-import tensorflow
 import typing
 
-import bothe.model
+import bothe.errors
 import bothe.logging
+import bothe.model
 
 
 class FileSystem:
@@ -20,12 +20,15 @@ class FileSystem:
     under the data root path.
     """
 
-    def __init__(self, path: str,
+    def __init__(self,
+                 path: str,
+                 loader: bothe.model.Loader,
                  logger: logging.Logger=bothe.logging.internal_logger):
+
         self.path = pathlib.Path(path)
         self.executor = concurrent.futures.ThreadPoolExecutor()
-        self.strategy = tensorflow.distribute.MirroredStrategy()
         self.logger = logger
+        self.loader = loader
 
         # Since the construction of this object is performed before the
         # start of the event loop, it is fine to call it just like this.
@@ -67,18 +70,13 @@ class FileSystem:
             path = self._model_path(name, tag)
             await self.run(shutil.rmtree, path, ignore_errors=False)
         except FileNotFoundError:
-            raise bothe.model.NotFoundError(name, tag)
+            raise bothe.errors.NotFoundError(name, tag)
 
     async def load(self, name: str, tag: str) -> bothe.model.Model:
-        """Load model with the given name and tag.
-
-        Model is loaded using TensorFlow SaveModel format.
-        """
-        m = bothe.model.Model(name, tag)
+        """Load model with the given name and tag."""
         path = self._model_path(name, tag)
-
-        m = await self.run(m.load, path, self.strategy)
-        return m
+        m = bothe.model.Model(name, tag, path, self.loader)
+        return await self.run(m.load)
 
 
 class Cache:

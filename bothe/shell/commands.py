@@ -4,7 +4,7 @@ import pathlib
 
 import bothe.asynclib
 import bothe.client
-import bothe.model
+import bothe.errors
 
 
 class ExitStatus(enum.Enum):
@@ -85,6 +85,8 @@ class Server(Command):
               default=".var/lib/bothe")),
         (["--strategy"],
          dict(metavar="STRATEGY",
+              default="mirrored",
+              choices=["mirrored", "multi_worker_mirrored", "none"],
               help="model execution strategy"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
@@ -157,7 +159,7 @@ class Remove(Command):
 
         try:
             bothe.asynclib.run(task)
-        except bothe.model.NotFoundError as e:
+        except bothe.errors.NotFoundError as e:
             if not args.quiet:
                 print("{0}.".format(e))
                 return ExitStatus.Failure

@@ -8,8 +8,8 @@ import tarfile
 import typing
 
 
-import bothe.model
 import bothe.asynclib
+import bothe.errors
 
 
 async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
@@ -78,7 +78,7 @@ class Client:
             resp = await session.delete(url)
 
             if resp.status == aiohttp.web.HTTPNotFound.status_code:
-                raise bothe.model.NotFoundError(name, tag)
+                raise bothe.errors.NotFoundError(name, tag)
 
     async def list(self):
         """List available models on the server."""
