@@ -28,6 +28,10 @@ setuptools.setup(
     ],
 
     packages=setuptools.find_packages(exclude=["tests"]),
+    tests_require=[
+        "pytest-aiohttp>=0.3.0",
+        "pytest-asyncio>=0.10.0",
+    ],
     install_requires=[
         "aiofiles>=0.4.0",
         "aiohttp>=3.5.4",

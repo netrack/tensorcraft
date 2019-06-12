@@ -83,14 +83,17 @@ class Model:
 
         x = numpy.array(x)
 
-        # Calculate the shape of the input data and validate it with the
-        # model parameters. This exception is handled by the server in
-        # order to return an appropriate error to the client.
-        _, *expected_dims = self.model.input_shape
-        _, *actual_dims = x.shape
+        # This check make sense only for models with defined input shapes
+        # (for example, when the layer is Dense).
+        if hasattr(self.model, "input_shape"):
+            # Calculate the shape of the input data and validate it with the
+            # model parameters. This exception is handled by the server in
+            # order to return an appropriate error to the client.
+            _, *expected_dims = self.model.input_shape
+            _, *actual_dims = x.shape
 
-        if expected_dims != actual_dims:
-            raise errors.InputShapeError(expected_dims, actual_dims)
+            if expected_dims != actual_dims:
+                raise errors.InputShapeError(expected_dims, actual_dims)
 
         return self.model.predict(x).tolist()
 

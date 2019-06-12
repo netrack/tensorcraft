@@ -31,13 +31,9 @@ class Server:
 
         logger.info("Server initialization completed")
 
-    async def prepare_response(self, request, response):
-        response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
-
-    def serve(self):
-        app = aiohttp.web.Application()
-        app.on_response_prepare.append(self.prepare_response)
-        app.add_routes([
+        self.app = aiohttp.web.Application()
+        self.app.on_response_prepare.append(self.prepare_response)
+        self.app.add_routes([
             aiohttp.web.put(
                 "/models/{name}/{tag}",
                 bothe.handlers.Push(self.models)),
@@ -51,8 +47,13 @@ class Server:
                 "/models",
                 bothe.handlers.List(self.models)),
             ])
+
+    async def prepare_response(self, request, response):
+        response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
+
+    def serve(self):
         aiohttp.web.run_app(
-            app, print=None,
+            self.app, print=None,
             host=self.config.host, port=self.config.port)
 
 
