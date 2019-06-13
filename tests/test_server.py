@@ -18,21 +18,18 @@ class TestServer(aiohttptest.AioHTTPTestCase):
     def setUp(self) -> None:
         # Preserve the link for the temporary directory in order
         # to prevent the self-destruction of this directory.
-        self.tempdir = tempfile.TemporaryDirectory()
-        self.temppath = pathlib.Path(self.tempdir.name)
+        self.workdir = tempfile.TemporaryDirectory()
+        self.workpath = pathlib.Path(self.workdir.name)
         super().setUp()
 
     async def tearDownAsync(self) -> None:
-        self.tempdir.cleanup()
-
-    def get_config(self) -> argparse.Namespace:
-        return argparse.Namespace(
-            strategy="mirrored",
-            data_root=str(self.temppath.joinpath("data")))
+        self.workdir.cleanup()
 
     async def get_application(self):
         """Create the server application."""
-        server = bothe.server.Server(self.get_config())
+        server = await bothe.server.Server.new(
+            strategy="mirrored",
+            data_root=str(self.workpath.joinpath("data")))
         return server.app
 
     @aiohttptest.unittest_run_loop
@@ -47,7 +44,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
 
         model.fit(x, y)
 
-        dest = self.temppath.joinpath("nn1")
+        dest = self.workpath.joinpath("nn1")
         tf.keras.experimental.export_saved_model(model, str(dest))
 
         # Ensure that model has been created.

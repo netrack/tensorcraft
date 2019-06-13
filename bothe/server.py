@@ -1,10 +1,13 @@
-import argparse
 import aiohttp
 import aiohttp.web
+import importlib
+import inspect
 import logging
 
 import bothe
+import bothe.asynclib
 import bothe.logging
+import bothe.model
 import bothe.handlers
 import bothe.storage.local
 
@@ -12,24 +15,26 @@ import bothe.storage.local
 class Server:
     """Serve the models."""
 
-    def __init__(self,
-                 config: argparse.Namespace,
-                 logger: logging.Logger=bothe.logging.internal_logger):
+    @classmethod
+    async def new(cls, data_root: str, host: str=None, port: str=None,
+                  preload: bool=False,
+                  strategy: str=bothe.model.Strategy.No.value,
+                  logger: logging.Logger=bothe.logging.internal_logger):
+        """Create new instance of the server."""
 
-        # TODO: use different execution strategies for the model and
+        self = cls()
+        self.host = host
+        self.port = port
+
+        # TODO: use different execution strategies for models and
         # fallback to the server-default execution strategy.
-        loader = bothe.model.Loader(strategy=config.strategy, logger=logger)
-
-        storage = bothe.storage.local.FileSystem(
-            path=config.data_root, loader=loader)
+        loader = bothe.model.Loader(strategy=strategy, logger=logger)
 
         logger.info("Using file storage backing engine")
-        storage = bothe.storage.local.Cache(storage)
+        storage = bothe.storage.local.FileSystem(path=data_root, loader=loader)
 
-        self.models = storage
-        self.config = config
-
-        logger.info("Server initialization completed")
+        self.models = await bothe.storage.local.Cache.new(
+            storage=storage, load=preload)
 
         self.app = aiohttp.web.Application()
         self.app.on_response_prepare.append(self.prepare_response)
@@ -48,13 +53,29 @@ class Server:
                 bothe.handlers.List(self.models)),
             ])
 
+        logger.info("Server initialization completed")
+        return self
+
+    @classmethod
+    def start(cls, **kwargs):
+        argnames = inspect.getfullargspec(cls.new)
+        kv = {k: v for k, v in kwargs.items() if k in argnames.args}
+
+        task = cls.new(**kv)
+        s = bothe.asynclib.run(task)
+        s.serve()
+
     async def prepare_response(self, request, response):
         response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
 
     def serve(self):
+        """Start serving the models.
+
+        Run event loop to handle the requests.
+        """
         aiohttp.web.run_app(
             self.app, print=None,
-            host=self.config.host, port=self.config.port)
+            host=self.host, port=self.port)
 
 
 if __name__ == "__main__":

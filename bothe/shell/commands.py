@@ -1,5 +1,6 @@
 import argparse
 import enum
+import importlib
 import pathlib
 
 import bothe.asynclib
@@ -87,12 +88,15 @@ class Server(Command):
          dict(metavar="STRATEGY",
               default="mirrored",
               choices=["mirrored", "multi_worker_mirrored", "none"],
-              help="model execution strategy"))]
+              help="model execution strategy")),
+        (["--preload"],
+         dict(action="store_true",
+              default=False,
+              help="preload all models into the memory before start"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        import bothe.server
-        s = bothe.server.Server(args)
-        s.serve()
+        server = importlib.import_module("bothe.server")
+        server.Server.start(**args.__dict__)
         return ExitStatus.Success
 
 
