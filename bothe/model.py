@@ -72,6 +72,10 @@ class Model:
         self.path = path
         self.model = None
 
+    def loaded(self):
+        """True when the model is loaded and False otherwise."""
+        return self.model is not None
+
     def load(self):
         """Load the execution model."""
         self.model = self.loader.load(self.path)
