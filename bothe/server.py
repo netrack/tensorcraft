@@ -33,8 +33,7 @@ class Server:
         logger.info("Using file storage backing engine")
         storage = bothe.storage.local.FileSystem(path=data_root, loader=loader)
 
-        self.models = await bothe.storage.local.Cache.new(
-            storage=storage, load=preload)
+        self.models = await bothe.model.Pool.new(storage=storage, load=preload)
 
         self.app = aiohttp.web.Application()
         self.app.on_response_prepare.append(self.prepare_response)
