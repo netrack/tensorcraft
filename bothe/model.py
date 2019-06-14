@@ -140,9 +140,8 @@ class Pool:
     async def all(self) -> typing.Sequence[Model]:
         """List all available models.
 
-        The call puts all retrieved models into the cache. All that
-        models are not loaded. So before using them, they must be
-        loaded.
+        The call puts all retrieved models into the cache. All that models are
+        not loaded. So before using them, they must be loaded.
         """
         async with self.lock:
             self.models = {}
@@ -151,14 +150,16 @@ class Pool:
                 self.models[(m.name, m.tag)] = m
                 yield m
 
-    async def save(self, name: str, tag: str, model: io.IOBase) -> None:
+    async def save(self, name: str, tag: str, model: io.IOBase) -> Model:
         """Save the model and load it into the memory.
 
-        Most likely the saved model will be used in the short period of
-        time, therefore it is beneficial to load it right after the save.
+        Most likely the saved model will be used in the short period of time,
+        therefore it is beneficial to load it right after the save.
         """
-        await self.storage.save(name, tag, model)
-        await self.load(name, tag)
+        m = await self.storage.save(name, tag, model)
+        async with self.lock:
+            self.models[(m.name, m.tag)] = m
+        return m
 
     async def delete(self, name: str, tag: str) -> None:
         fullname = (name, tag)
@@ -170,11 +171,11 @@ class Pool:
         await self.storage.delete(name, tag)
 
     async def unsafe_load(self, name: str, tag: str) -> Model:
+        """Load the model into the internal cache without acquiring the lock."""
         fullname = (name, tag)
         if ((fullname not in self.models) or
              not self.models[fullname].loaded()):
             self.models[fullname] = await self.storage.load(name, tag)
-
         return self.models[fullname]
 
     async def load(self, name: str, tag: str) -> Model:
