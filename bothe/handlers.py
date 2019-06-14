@@ -86,9 +86,8 @@ class List:
         Args:
             req -- empty request
         """
-        models = await self.models.all()
-        dicts = map(lambda m: m.todict(), models)
-        return aiohttp.web.json_response(list(dicts))
+        models = [m.todict() async for m in self.models.all()]
+        return aiohttp.web.json_response(list(models))
 
 
 class Remove:

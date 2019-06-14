@@ -1,4 +1,5 @@
 import aiohttp.test_utils as aiohttptest
+import aiohttp.web
 import argparse
 import numpy
 import pathlib
@@ -25,7 +26,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
     async def tearDownAsync(self) -> None:
         self.workdir.cleanup()
 
-    async def get_application(self):
+    async def get_application(self) -> aiohttp.web.Application:
         """Create the server application."""
         server = await bothe.server.Server.new(
             strategy="mirrored",
