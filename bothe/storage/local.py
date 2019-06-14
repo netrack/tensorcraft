@@ -102,6 +102,7 @@ class FileSystem:
         try:
             path = self.model_path(self.root, name, tag)
             await self.run(shutil.rmtree, path, ignore_errors=False)
+            self.logger.info("Removed model image %s:%s", name, tag)
         except FileNotFoundError:
             raise bothe.errors.NotFoundError(name, tag)
 

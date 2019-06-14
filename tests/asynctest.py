@@ -31,6 +31,29 @@ class AsyncGeneratorMock(unittest.mock.MagicMock):
             raise StopAsyncIteration
 
 
+class _AsyncContextManager:
+
+    def __init__(self, async_generator):
+        self.agen = async_generator.__aiter__()
+
+    async def __aenter__(self):
+        return await self.agen.__anext__()
+
+    async def __aexit__(self, typ, value, traceback):
+        try:
+            await self.agen.__anext__()
+        except StopAsyncIteration:
+            return False
+
+
+def asynccontextmanager(func):
+    """Simple implementation of async context manager decorator."""
+    def _f(*args, **kwargs):
+        async_generator = func(*args, **kwargs)
+        return _AsyncContextManager(async_generator)
+    return _f
+
+
 def unittest_run_loop(coroutine):
     def test(*args, **kwargs):
         loop = asyncio.new_event_loop()
