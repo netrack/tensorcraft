@@ -1,10 +1,14 @@
+import asyncio
 import enum
 import contextlib
+import io
 import logging
 import numpy
 import tensorflow as tf
+import typing
 
 import bothe.errors
+import bothe.logging
 
 
 class Strategy(enum.Enum):
@@ -106,3 +110,75 @@ class Model:
 
     def __str__(self):
         return "Model(name={0}, tag={1})".format(self.name, self.tag)
+
+
+class Pool:
+    """Pool of models, speeds up the load of models.
+
+    Pool saves models into the in-memory cache and delegates calls
+    to the parent storage when the model is not found locally.
+    """
+
+    @classmethod
+    async def new(cls, storage, load: bool=False,
+                  logger: logging.Logger=bothe.logging.internal_logger):
+        self = cls()
+        self.logger = logger
+        self.storage = storage
+        self.lock = asyncio.Lock()
+        self.models = {}
+
+        if not load:
+            return self
+
+        async for m in self.all():
+            logger.info("Loading {0}:{1} model".format(m.name, m.tag))
+            await self.unsafe_load(m.name, m.tag)
+
+        return self
+
+    async def all(self) -> typing.Sequence[Model]:
+        """List all available models.
+
+        The call puts all retrieved models into the cache. All that
+        models are not loaded. So before using them, they must be
+        loaded.
+        """
+        async with self.lock:
+            self.models = {}
+
+            async for m in self.storage.all():
+                self.models[(m.name, m.tag)] = m
+                yield m
+
+    async def save(self, name: str, tag: str, model: io.IOBase) -> None:
+        """Save the model and load it into the memory.
+
+        Most likely the saved model will be used in the short period of
+        time, therefore it is beneficial to load it right after the save.
+        """
+        await self.storage.save(name, tag, model)
+        await self.load(name, tag)
+
+    async def delete(self, name: str, tag: str) -> None:
+        fullname = (name, tag)
+        # This is totally fine to loose the data from the cache but
+        # leave it in the storage (due to unexpected error).
+        async with self.lock:
+            if fullname in self.models:
+                del self.models[fullname]
+        await self.storage.delete(name, tag)
+
+    async def unsafe_load(self, name: str, tag: str) -> Model:
+        fullname = (name, tag)
+        if ((fullname not in self.models) or
+             not self.models[fullname].loaded()):
+            self.models[fullname] = await self.storage.load(name, tag)
+
+        return self.models[fullname]
+
+    async def load(self, name: str, tag: str) -> Model:
+        # Load the model from the parent storage when
+        # it is missing in the cache.
+        async with self.lock:
+            return await self.unsafe_load(name, tag)
