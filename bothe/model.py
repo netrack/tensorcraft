@@ -4,8 +4,10 @@ import contextlib
 import io
 import logging
 import numpy
+import pathlib
 import tensorflow as tf
 import typing
+import uuid
 
 import bothe.errors
 import bothe.logging
@@ -49,10 +51,10 @@ class Loader:
         self.logger = logger
         self.strategy = strategy_class()
 
-    def load(self, path: str):
+    def load(self, path: typing.Union[str, pathlib.Path]):
         """Load the model by the given path."""
         with self.strategy.scope():
-            m = tf.keras.experimental.load_from_saved_model(path)
+            m = tf.keras.experimental.load_from_saved_model(str(path))
             self.logger.debug("Model loaded from path %s", path)
             return m
 
@@ -61,20 +63,26 @@ class Model:
     """Machine-leaning model.
 
     Attributes:
+        uuid -- unique model identifier
         name -- the name of the model
         tag -- the tag of the model
         path -- the location of the model on file system
         loader -- the model loader
     """
 
-    def __init__(self, name: str, tag: str,
+    def __init__(self, uuid: uuid.UUID, name: str, tag: str,
                  path: str=None, loader: Loader=None):
+        self.uuid = uuid
         self.name = name
         self.tag = tag
 
         self.loader = loader
         self.path = path
         self.model = None
+
+    @property
+    def fullname(self):
+        return "{0}:{1}".format(self.name, self.tag)
 
     def loaded(self):
         """True when the model is loaded and False otherwise."""

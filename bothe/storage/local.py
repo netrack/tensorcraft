@@ -8,6 +8,7 @@ import shutil
 import tarfile
 import tempfile
 import typing
+import uuid
 
 import bothe.errors
 import bothe.logging
@@ -21,12 +22,17 @@ class FileSystem:
     under the data root path.
     """
 
-    def __init__(self,
-                 root: str,
-                 loader: bothe.model.Loader,
-                 logger: logging.Logger=bothe.logging.internal_logger):
+    @classmethod
+    def new(cls,
+            root: str,
+            loader: bothe.model.Loader,
+            logger: logging.Logger=bothe.logging.internal_logger):
+
+        logger.info("Using file storage backing engine")
 
         self.root = pathlib.Path(root)
+        self.model_root = self.root.joinpath("models")
+
         self.executor = concurrent.futures.ThreadPoolExecutor()
         self.logger = logger
         self.loader = loader
@@ -34,15 +40,13 @@ class FileSystem:
         # Since the construction of this object is performed before the
         # start of the event loop, it is fine to call it just like this.
         self.root.mkdir(parents=True, exist_ok=True)
+        self.model_root.mkdir(parents=True, exist_ok=True)
 
         # Temporary directory in order to save here models that where
         # requested to be saved. We need to check if they are valid at
         # first.
         self.temp_root_directory = tempfile.TemporaryDirectory()
         self.temp_root = pathlib.Path(self.temp_root_directory.name)
-
-    def __del__(self):
-        self.temp_root_directory.cleanup()
 
     def model_name(self, name: str, tag: str) -> str:
         """Full name of the model."""
@@ -74,27 +78,28 @@ class FileSystem:
                    model: io.IOBase) -> bothe.model.Model:
         """Save the model into the local storage.
 
-        Extracts the TAR archive into the data root directory under the name
-        "model_name@model_tag".
+        Extracts the TAR archive into the data root directory.
         """
-        dest = self.model_path(self.root, name, tag)
-        temp_dest = self.model_path(self.temp_root, name, tag)
+        model_uuid = uuid.uuid4()
+        model_path = self.model_root.joinpath(model_uuid.hex)
 
-        self.logger.info("Pushing model image %s:%s to %s", name, tag, dest)
-
+        temp_model_path = self.temp_root.joinpath(model_uuid.hex)
         # Extract TAR archive into the temporary directory, load
         # it, and only if the load completes successfully, move
         # the model into the data directory.
-        await self.run(extract_tar, fileobj=model, dest=temp_dest)
+        await self.run(extract_tar, fileobj=model, dest=temp_model_path)
 
-        self.logger.debug("Ensuring model has correct format")
         # Now load the model into the memory, to pass all validations.
-        m = bothe.model.Model(name, tag, path=temp_dest, loader=self.loader)
+        self.logger.debug("Ensuring model has correct format")
+
+        m = bothe.model.Model(model_uuid, name, tag, temp_model_path, self.loader)
         m = await self.run(m.load)
 
         # Model successfully loaded, so now it can be moved to the original
         # data root directory.
-        await self.run(shutil.move, src=temp_dest, dst=dest)
+        self.logger.info("Pushing model %s:%s to %s", name, tag, model_path)
+        await self.run(shutil.move, src=temp_model_path, dst=model_path)
+
         return m
 
     async def delete(self, name: str, tag: str) -> None:

@@ -30,8 +30,8 @@ class Server:
         # fallback to the server-default execution strategy.
         loader = bothe.model.Loader(strategy=strategy, logger=logger)
 
-        logger.info("Using file storage backing engine")
-        storage = bothe.storage.local.FileSystem(root=data_root, loader=loader)
+        storage = bothe.storage.local.FileSystem.new(root=data_root,
+                                                     loader=loader)
 
         self.models = await bothe.model.Pool.new(storage=storage, load=preload)
 
