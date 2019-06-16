@@ -86,7 +86,7 @@ class List:
         Args:
             req -- empty request
         """
-        models = [m.todict() async for m in self.models.all()]
+        models = [m.to_dict() async for m in self.models.all()]
         return aiohttp.web.json_response(list(models))
 
 

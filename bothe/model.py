@@ -63,26 +63,30 @@ class Model:
     """Machine-leaning model.
 
     Attributes:
-        uuid -- unique model identifier
+        id -- unique model identifier
         name -- the name of the model
         tag -- the tag of the model
         path -- the location of the model on file system
         loader -- the model loader
     """
 
-    def __init__(self, uuid: uuid.UUID, name: str, tag: str,
-                 path: str=None, loader: Loader=None):
-        self.uuid = uuid
+    @classmethod
+    def from_dict(cls, **kwargs):
+        self = cls(**kwargs)
+        return self
+
+    def to_dict(self):
+        return dict(id=self.id.hex, name=self.name, tag=self.tag)
+
+    def __init__(self, id: typing.Union[uuid.UUID, str],
+                 name: str, tag: str, path: str=None, loader: Loader=None):
+        self.id = uuid.UUID(str(id))
         self.name = name
         self.tag = tag
 
         self.loader = loader
         self.path = path
         self.model = None
-
-    @property
-    def fullname(self):
-        return "{0}:{1}".format(self.name, self.tag)
 
     def loaded(self):
         """True when the model is loaded and False otherwise."""
@@ -113,11 +117,8 @@ class Model:
 
         return self.model.predict(x).tolist()
 
-    def todict(self):
-        return dict(name=self.name, tag=self.tag)
-
     def __str__(self):
-        return "Model(name={0}, tag={1})".format(self.name, self.tag)
+        return "{0}:{1}".format(self.name, self.tag)
 
 
 class Pool:

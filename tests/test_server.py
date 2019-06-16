@@ -83,9 +83,14 @@ class TestServer(aiohttptest.AioHTTPTestCase):
             resp = await self.client.get("/models")
             self.assertEqual(resp.status, 200)
 
-            body = [dict(name="nn1", tag="latest")]
-            self.assertEqual(await resp.json(), body)
-        
+            data = await resp.json()
+            self.assertEqual(1, len(data))
+
+            data = data[0]
+            data.pop("id")
+
+            self.assertEqual(data, dict(name="nn1", tag="latest"))
+
 
 if __name__ == "__main__":
     unittest.main()
