@@ -1,12 +1,9 @@
 import asyncio
 import concurrent.futures
-import functools
 import io
 import logging
 import pathlib
 import shutil
-import tarfile
-import tempfile
 import tinydb
 import typing
 import uuid
@@ -15,6 +12,8 @@ import bothe.errors
 import bothe.logging
 import bothe.model
 import bothe.storage.meta
+
+from bothe import asynclib
 
 
 Model = tinydb.Query()
@@ -49,35 +48,22 @@ class FileSystem:
         self.models_path.mkdir(parents=True, exist_ok=True)
 
         self.executor = concurrent.futures.ThreadPoolExecutor()
-
-        # Temporary directory in order to save here models that where
-        # requested to be saved. We need to check if they are valid at
-        # first.
-        ## self.temp_root_directory = tempfile.TemporaryDirectory()
-        ## self.temp_root = pathlib.Path(self.temp_root_directory.name)
         return self
 
     def _new_model(self, record: typing.Dict) -> bothe.model.Model:
         path = self.models_path.joinpath(record["id"])
         return bothe.model.Model(path=path, loader=self.loader, **record)
 
-    async def _get_model(self, name: str, tag: str):
-        record = await self.meta.get((Model.name == name) & (Model.tag == tag))
-        if not record:
-            raise bothe.errors.NotFoundError(name, tag)
-        return self._new_model(record)
-
-    def run(self, func, *args, **kwargs):
+    def await_in_thread(self, task: typing.Coroutine):
         """Run the given function within an instance executor."""
-        f = functools.partial(func, *args, **kwargs)
         loop = asyncio.get_event_loop()
-        return loop.run_in_executor(self.executor, f)
+        return loop.run_in_executor(self.executor, asynclib.run, task)
 
     async def all(self) -> typing.Sequence[bothe.model.Model]:
         """List available models and their tags.
 
         The method returns a list of not loaded models, therefore before using
-        them, models must be loaded.
+        them (e.g. for prediction), models must be loaded.
         """
         for record in await self.meta.all():
             path = self.models_path.joinpath(record["id"])
@@ -93,48 +79,56 @@ class FileSystem:
         model_id = uuid.uuid4()
         model_path = self.models_path.joinpath(model_id.hex)
 
-        await self.run(extract_tar, fileobj=model, dest=model_path)
+        try:
+            task = asynclib.extract_tar(fileobj=model, dest=model_path)
+            await self.await_in_thread(task)
 
-        # Now load the model into the memory, to pass all validations.
-        self.logger.debug("Ensuring model has correct format")
+            # Now load the model into the memory, to pass all validations.
+            self.logger.debug("Ensuring model has correct format")
 
-        m = bothe.model.Model(model_id, name, tag, model_path, self.loader)
-        m = await self.run(m.load)
+            m = bothe.model.Model(model_id, name, tag, model_path, self.loader)
+            m = await self.await_in_thread(asyncio.coroutine(m.load)())
 
-        await self.meta.insert(m.to_dict())
+            # Insert the model metadata only on the last step.
+            await self.meta.insert(m.to_dict())
 
-        # Model successfully loaded, so now it can be moved to the original
-        # data root directory.
-        self.logger.info("Pushing model %s:%s to %s", name, tag, model_path)
-        # await self.run(shutil.move, src=temp_model_path, dst=model_path)
-        return m
+            # Model successfully loaded, so now it can be moved to the original
+            # data root directory.
+            self.logger.info("Pushing model %s to %s", m, model_path)
+            return m
+
+        except Exception as e:
+            # In case of an exception, remove the model from the directory
+            # and ensure the metadata database does not store any information.
+            #
+            # The caller have to ensure atomicity of this operation.
+            await self.meta.remove(Model.id == model_id)
+
+            task = asynclib.remove_dir(model_path, ignore_errors=True)
+            await self.await_in_thread(task)
+            raise e
 
     async def delete(self, name: str, tag: str) -> None:
         """Remove model with the given name and tag."""
         try:
-            m = await self._get_model(name, tag)
-
             # Model found, remove metadata from the database.
+            m = await self._load(name, tag)
             await self.meta.remove(Model.id == m.id)
+
             # Remove the model data from the storage.
-            await self.run(shutil.rmtree, m.path, ignore_errors=False)
+            await self.await_in_thread(asynclib.remove_dir(m.path))
 
             self.logger.info("Removed model %s:%s", name, tag)
         except FileNotFoundError:
             raise bothe.errors.NotFoundError(name, tag)
 
+    async def _load(self, name: str, tag: str):
+        record = await self.meta.get((Model.name == name) & (Model.tag == tag))
+        if not record:
+            raise bothe.errors.NotFoundError(name, tag)
+        return self._new_model(record)
+
     async def load(self, name: str, tag: str) -> bothe.model.Model:
         """Load model with the given name and tag."""
-        m = await self._get_model(name, tag)
-        return await self.run(m.load)
-
-
-def child_dirs(path: pathlib.Path) -> typing.Sequence[pathlib.Path]:
-    """Retrieve all child directories of the given directory."""
-    return [p for p in path.iterdir() if p.is_dir()]
-
-
-def extract_tar(fileobj: io.IOBase, dest: str) -> None:
-    """Extract content of the TAR archive into the given directory."""
-    with tarfile.open(fileobj=fileobj, mode="r") as tf:
-        tf.extractall(dest)
+        m = await self._load(name, tag)
+        return self.await_in_thread(asyncio.coroutine(m.load)())

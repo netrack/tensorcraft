@@ -129,7 +129,7 @@ class Pool:
     """
 
     @classmethod
-    async def new(cls, storage, load: bool=False,
+    async def new(cls, storage, preload: bool=False,
                   logger: logging.Logger=bothe.logging.internal_logger):
         self = cls()
         self.logger = logger
@@ -137,7 +137,7 @@ class Pool:
         self.lock = asyncio.Lock()
         self.models = {}
 
-        if not load:
+        if not preload:
             return self
 
         async for m in self.all():

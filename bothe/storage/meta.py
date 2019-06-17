@@ -10,8 +10,8 @@ class DB:
         root = pathlib.Path(root)
 
         self.lock = aiorwlock.RWLock()
-        self.db = tinydb.TinyDB(path=root.joinpath("models.json"),
-                                default_table="models")
+        self.db = tinydb.TinyDB(path=root.joinpath("metadata.json"),
+                                default_table="metadata")
 
     async def close(self) -> None:
         async with self.lock.writer_lock:
@@ -25,7 +25,7 @@ class DB:
         async with self.lock.reader_lock:
             return self.db.all()
 
-    async def insert(self, document) -> None:
+    async def insert(self, document: typing.Dict) -> None:
         async with self.lock.writer_lock:
             self.db.insert(document)
 

@@ -39,7 +39,8 @@ class Server:
                                                      meta=self.meta,
                                                      loader=loader)
 
-        self.models = await bothe.model.Pool.new(storage=storage, load=preload)
+        self.models = await bothe.model.Pool.new(storage=storage,
+                                                 preload=preload)
 
         self.app = aiohttp.web.Application()
         self.app.on_response_prepare.append(self._prepare_response)
