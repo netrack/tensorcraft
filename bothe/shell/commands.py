@@ -3,9 +3,10 @@ import enum
 import importlib
 import pathlib
 
-import bothe.asynclib
 import bothe.client
 import bothe.errors
+
+from bothe import asynclib
 
 
 class ExitStatus(enum.Enum):
@@ -130,7 +131,7 @@ class Push(Command):
         task = client.push(args.name, args.tag, path)
 
         try:
-            bothe.asynclib.run(task)
+            asynclib.run(task)
         except Exception as e:
             print("Failed to push model. {0}".format(e))
             return ExitStatus.Failure
@@ -162,7 +163,7 @@ class Remove(Command):
         task = client.remove(args.name, args.tag)
 
         try:
-            bothe.asynclib.run(task)
+            asynclib.run(task)
         except bothe.errors.NotFoundError as e:
             if not args.quiet:
                 print("{0}.".format(e))
@@ -187,7 +188,7 @@ class List(Command):
         task = client.list()
 
         try:
-            for model in bothe.asynclib.run(task):
+            for model in asynclib.run(task):
                 print("{name}:{tag}".format(**model))
         except Exception as e:
             print("Failed to list models. {0}.".format(e))

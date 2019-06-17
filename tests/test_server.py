@@ -10,7 +10,8 @@ import unittest
 
 import bothe.server
 import bothe.asynclib
-import tests.asynctest
+
+from tests import asynctest
 
 
 class TestServer(aiohttptest.AioHTTPTestCase):
@@ -30,10 +31,10 @@ class TestServer(aiohttptest.AioHTTPTestCase):
         """Create the server application."""
         server = await bothe.server.Server.new(
             strategy="mirrored",
-            data_root=str(self.workpath.joinpath("data")))
+            data_root=str(self.workpath))
         return server.app
 
-    @tests.asynctest.asynccontextmanager
+    @asynctest.asynccontextmanager
     async def with_model(self, name: str, tag: str):
         try:
             model = tf.keras.models.Sequential()
@@ -83,9 +84,14 @@ class TestServer(aiohttptest.AioHTTPTestCase):
             resp = await self.client.get("/models")
             self.assertEqual(resp.status, 200)
 
-            body = [dict(name="nn1", tag="latest")]
-            self.assertEqual(await resp.json(), body)
-        
+            data = await resp.json()
+            self.assertEqual(1, len(data))
+
+            data = data[0]
+            data.pop("id")
+
+            self.assertEqual(data, dict(name="nn1", tag="latest"))
+
 
 if __name__ == "__main__":
     unittest.main()

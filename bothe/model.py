@@ -4,8 +4,10 @@ import contextlib
 import io
 import logging
 import numpy
+import pathlib
 import tensorflow as tf
 import typing
+import uuid
 
 import bothe.errors
 import bothe.logging
@@ -49,10 +51,10 @@ class Loader:
         self.logger = logger
         self.strategy = strategy_class()
 
-    def load(self, path: str):
+    def load(self, path: typing.Union[str, pathlib.Path]):
         """Load the model by the given path."""
         with self.strategy.scope():
-            m = tf.keras.experimental.load_from_saved_model(path)
+            m = tf.keras.experimental.load_from_saved_model(str(path))
             self.logger.debug("Model loaded from path %s", path)
             return m
 
@@ -61,14 +63,24 @@ class Model:
     """Machine-leaning model.
 
     Attributes:
+        id -- unique model identifier
         name -- the name of the model
         tag -- the tag of the model
         path -- the location of the model on file system
         loader -- the model loader
     """
 
-    def __init__(self, name: str, tag: str,
-                 path: str=None, loader: Loader=None):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        self = cls(**kwargs)
+        return self
+
+    def to_dict(self):
+        return dict(id=self.id.hex, name=self.name, tag=self.tag)
+
+    def __init__(self, id: typing.Union[uuid.UUID, str],
+                 name: str, tag: str, path: str=None, loader: Loader=None):
+        self.id = uuid.UUID(str(id))
         self.name = name
         self.tag = tag
 
@@ -105,22 +117,19 @@ class Model:
 
         return self.model.predict(x).tolist()
 
-    def todict(self):
-        return dict(name=self.name, tag=self.tag)
-
     def __str__(self):
-        return "Model(name={0}, tag={1})".format(self.name, self.tag)
+        return "{0}:{1}".format(self.name, self.tag)
 
 
-class Pool:
-    """Pool of models, speeds up the load of models.
+class Cache:
+    """Cache of models, speeds up the load of models.
 
-    Pool saves models into the in-memory cache and delegates calls
+    Cache saves models into the in-memory cache and delegates calls
     to the parent storage when the model is not found locally.
     """
 
     @classmethod
-    async def new(cls, storage, load: bool=False,
+    async def new(cls, storage, preload: bool=False,
                   logger: logging.Logger=bothe.logging.internal_logger):
         self = cls()
         self.logger = logger
@@ -128,7 +137,7 @@ class Pool:
         self.lock = asyncio.Lock()
         self.models = {}
 
-        if not load:
+        if not preload:
             return self
 
         async for m in self.all():
