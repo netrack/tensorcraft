@@ -1,16 +1,17 @@
 import aiohttp
 import aiohttp.web
-import aiojobs.aiohttp
-import importlib
 import inspect
 import logging
+import pathlib
 
 import bothe
 import bothe.logging
 import bothe.model
-import bothe.handlers
 import bothe.storage.local
 import bothe.storage.meta
+
+from aiojobs.aiohttp import atomic, setup
+from bothe import handlers
 
 
 class Server:
@@ -28,48 +29,48 @@ class Server:
         self.host = host
         self.port = port
 
-        self.meta = bothe.storage.meta.DB(root=data_root)
+        # Create a data root directory where all server data is persisted.
+        data_root = pathlib.Path(data_root)
+        data_root.mkdir(parents=True, exist_ok=True)
 
         # TODO: use different execution strategies for models and
         # fallback to the server-default execution strategy.
         loader = bothe.model.Loader(strategy=strategy, logger=logger)
 
-        storage = bothe.storage.local.FileSystem.new(root=data_root,
-                                                     meta=self.meta,
-                                                     loader=loader)
+        # A metadata storage with models details.
+        meta = bothe.storage.meta.DB(path=data_root)
 
-        self.models = await bothe.model.Cache.new(storage=storage,
-                                                 preload=preload)
+        storage = bothe.storage.local.FileSystem.new(
+            path=data_root, meta=meta, loader=loader)
+
+        models = await bothe.model.Cache.new(
+            storage=storage, preload=preload)
 
         self.app = aiohttp.web.Application()
         self.app.on_response_prepare.append(self._prepare_response)
-        self.app.on_shutdown.append(self._shutdown)
+        self.app.on_shutdown.append(cls.wrap_shutdown(meta.close))
 
         self.app.add_routes([
             aiohttp.web.put(
                 "/models/{name}/{tag}",
-                aiojobs.aiohttp.atomic(bothe.handlers.Push(self.models))),
+                atomic(handlers.Push(models))),
             aiohttp.web.delete(
                 "/models/{name}/{tag}",
-                aiojobs.aiohttp.atomic(bothe.handlers.Remove(self.models))),
+                atomic(handlers.Remove(models))),
             aiohttp.web.post(
                 "/models/{name}/{tag}/predict",
-                aiojobs.aiohttp.atomic(bothe.handlers.Predict(self.models))),
-            aiohttp.web.get(
-                "/models",
-                bothe.handlers.List(self.models)),
-            ])
+                atomic(handlers.Predict(models))),
 
-        aiojobs.aiohttp.setup(self.app)
+            aiohttp.web.get("/models", atomic(handlers.List(models))),
+            aiohttp.web.get("/status", atomic(handlers.Status()))])
 
+        setup(self.app)
         logger.info("Server initialization completed")
+
         return self
 
     async def _prepare_response(self, request, response):
         response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
-
-    async def _shutdown(self, app):
-        await self.meta.close()
 
     @classmethod
     def start(cls, **kwargs):
@@ -86,6 +87,12 @@ class Server:
 
         aiohttp.web.run_app(application_factory(), print=None,
                             host=kv.get("host"), port=kv.get("port"))
+
+    @classmethod
+    def wrap_shutdown(cls, awaitable):
+        async def on_shutdown(app):
+            await awaitable()
+        return on_shutdown
 
 
 if __name__ == "__main__":

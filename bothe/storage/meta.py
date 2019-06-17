@@ -6,11 +6,9 @@ import typing
 
 class DB:
 
-    def __init__(self, root: str) -> None:
-        root = pathlib.Path(root)
-
+    def __init__(self, path: pathlib.Path) -> None:
         self.lock = aiorwlock.RWLock()
-        self.db = tinydb.TinyDB(path=root.joinpath("metadata.json"),
+        self.db = tinydb.TinyDB(path=path.joinpath("metadata.json"),
                                 default_table="metadata")
 
     async def close(self) -> None:
