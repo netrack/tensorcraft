@@ -30,7 +30,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
         """Create the server application."""
         server = await bothe.server.Server.new(
             strategy="mirrored",
-            data_root=str(self.workpath.joinpath("data")))
+            data_root=str(self.workpath))
         return server.app
 
     @tests.asynctest.asynccontextmanager

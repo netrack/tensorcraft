@@ -14,6 +14,7 @@ import uuid
 import bothe.errors
 import bothe.logging
 import bothe.model
+import bothe.storage.meta
 
 
 Model = tinydb.Query()
@@ -29,12 +30,14 @@ class FileSystem:
     @classmethod
     def new(cls,
             root: str,
+            meta: bothe.storage.meta.DB,
             loader: bothe.model.Loader,
             logger: logging.Logger=bothe.logging.internal_logger):
 
         self = cls()
         logger.info("Using file storage backing engine")
 
+        self.meta = meta
         self.logger = logger
         self.loader = loader
 
@@ -45,10 +48,6 @@ class FileSystem:
         # start of the event loop, it is fine to call it just like this.
         self.models_path.mkdir(parents=True, exist_ok=True)
 
-        # A database where model's metadata is stored.
-        self.models_db = tinydb.TinyDB(path=self.root.joinpath("models.json"),
-                                       default_table="models")
-
         self.executor = concurrent.futures.ThreadPoolExecutor()
 
         # Temporary directory in order to save here models that where
@@ -58,12 +57,15 @@ class FileSystem:
         ## self.temp_root = pathlib.Path(self.temp_root_directory.name)
         return self
 
-    def _get_model(self, name: str, tag: str):
-        record = self.models_db.get((Model.name == name) &
-                                    (Model.tag == tag))
+    def _new_model(self, record: typing.Dict) -> bothe.model.Model:
+        path = self.models_path.joinpath(record["id"])
+        return bothe.model.Model(path=path, loader=self.loader, **record)
+
+    async def _get_model(self, name: str, tag: str):
+        record = await self.meta.get((Model.name == name) & (Model.tag == tag))
         if not record:
             raise bothe.errors.NotFoundError(name, tag)
-        return record
+        return self._new_model(record)
 
     def run(self, func, *args, **kwargs):
         """Run the given function within an instance executor."""
@@ -77,8 +79,7 @@ class FileSystem:
         The method returns a list of not loaded models, therefore before using
         them, models must be loaded.
         """
-        records = self.models_db.all()
-        for record in records:
+        for record in await self.meta.all():
             path = self.models_path.joinpath(record["id"])
             m = bothe.model.Model(path=path, loader=self.loader, **record)
             yield m
@@ -100,7 +101,7 @@ class FileSystem:
         m = bothe.model.Model(model_id, name, tag, model_path, self.loader)
         m = await self.run(m.load)
 
-        self.models_db.insert(m.to_dict())
+        await self.meta.insert(m.to_dict())
 
         # Model successfully loaded, so now it can be moved to the original
         # data root directory.
@@ -111,15 +112,12 @@ class FileSystem:
     async def delete(self, name: str, tag: str) -> None:
         """Remove model with the given name and tag."""
         try:
-            record = self._get_model(name, tag)
+            m = await self._get_model(name, tag)
 
-            # Remove the metadata from the database.
-            m = bothe.model.Model.from_dict(**record)
-            self.models_db.remove(Model.id == m.id)
-
+            # Model found, remove metadata from the database.
+            await self.meta.remove(Model.id == m.id)
             # Remove the model data from the storage.
-            path = self.models_path.joinpath(m.id.hex)
-            await self.run(shutil.rmtree, path, ignore_errors=False)
+            await self.run(shutil.rmtree, m.path, ignore_errors=False)
 
             self.logger.info("Removed model %s:%s", name, tag)
         except FileNotFoundError:
@@ -127,10 +125,7 @@ class FileSystem:
 
     async def load(self, name: str, tag: str) -> bothe.model.Model:
         """Load model with the given name and tag."""
-        record = self._get_model(name, tag)
-        path = self.models_path.joinpath(record["id"])
-
-        m = bothe.model.Model.from_dict(path=path, loader=self.loader, **record)
+        m = await self._get_model(name, tag)
         return await self.run(m.load)
 
 

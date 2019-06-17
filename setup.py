@@ -32,7 +32,9 @@ setuptools.setup(
         "pytest-aiohttp>=0.3.0",
     ],
     install_requires=[
+        "aiojobs>=0.2.2",
         "aiofiles>=0.4.0",
+        "aiorwlock>=0.6.0",
         "aiohttp>=3.5.4",
         "humanize>=0.5.1",
         "numpy>=1.16.3",
