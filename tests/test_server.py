@@ -10,7 +10,8 @@ import unittest
 
 import bothe.server
 import bothe.asynclib
-import tests.asynctest
+
+from tests import asynctest
 
 
 class TestServer(aiohttptest.AioHTTPTestCase):
@@ -33,7 +34,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
             data_root=str(self.workpath))
         return server.app
 
-    @tests.asynctest.asynccontextmanager
+    @asynctest.asynccontextmanager
     async def with_model(self, name: str, tag: str):
         try:
             model = tf.keras.models.Sequential()

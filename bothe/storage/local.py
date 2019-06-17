@@ -131,4 +131,4 @@ class FileSystem:
     async def load(self, name: str, tag: str) -> bothe.model.Model:
         """Load model with the given name and tag."""
         m = await self._load(name, tag)
-        return self.await_in_thread(asyncio.coroutine(m.load)())
+        return await self.await_in_thread(asyncio.coroutine(m.load)())

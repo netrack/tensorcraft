@@ -121,10 +121,10 @@ class Model:
         return "{0}:{1}".format(self.name, self.tag)
 
 
-class Pool:
-    """Pool of models, speeds up the load of models.
+class Cache:
+    """Cache of models, speeds up the load of models.
 
-    Pool saves models into the in-memory cache and delegates calls
+    Cache saves models into the in-memory cache and delegates calls
     to the parent storage when the model is not found locally.
     """
 

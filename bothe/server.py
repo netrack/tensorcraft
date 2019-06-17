@@ -6,7 +6,6 @@ import inspect
 import logging
 
 import bothe
-import bothe.asynclib
 import bothe.logging
 import bothe.model
 import bothe.handlers
@@ -39,7 +38,7 @@ class Server:
                                                      meta=self.meta,
                                                      loader=loader)
 
-        self.models = await bothe.model.Pool.new(storage=storage,
+        self.models = await bothe.model.Cache.new(storage=storage,
                                                  preload=preload)
 
         self.app = aiohttp.web.Application()
@@ -66,29 +65,27 @@ class Server:
         logger.info("Server initialization completed")
         return self
 
-    @classmethod
-    def start(cls, **kwargs):
-        argnames = inspect.getfullargspec(cls.new)
-        kv = {k: v for k, v in kwargs.items() if k in argnames.args}
-
-        task = cls.new(**kv)
-        s = bothe.asynclib.run(task)
-        s.serve()
-
     async def _prepare_response(self, request, response):
         response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
 
     async def _shutdown(self, app):
         await self.meta.close()
 
-    def serve(self):
+    @classmethod
+    def start(cls, **kwargs):
         """Start serving the models.
 
         Run event loop to handle the requests.
         """
-        aiohttp.web.run_app(
-            self.app, print=None,
-            host=self.host, port=self.port)
+        argnames = inspect.getfullargspec(cls.new)
+        kv = {k: v for k, v in kwargs.items() if k in argnames.args}
+
+        async def application_factory():
+            s = await cls.new(**kv)
+            return s.app
+
+        aiohttp.web.run_app(application_factory(), print=None,
+                            host=kv.get("host"), port=kv.get("port"))
 
 
 if __name__ == "__main__":
