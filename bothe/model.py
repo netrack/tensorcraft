@@ -1,4 +1,4 @@
-import asyncio
+import aiorwlock
 import enum
 import contextlib
 import io
@@ -134,7 +134,7 @@ class Cache:
         self = cls()
         self.logger = logger
         self.storage = storage
-        self.lock = asyncio.Lock()
+        self.lock = aiorwlock.RWLock()
         self.models = {}
 
         if not preload:
@@ -152,7 +152,7 @@ class Cache:
         The call puts all retrieved models into the cache. All that models are
         not loaded. So before using them, they must be loaded.
         """
-        async with self.lock:
+        async with self.lock.reader_lock:
             self.models = {}
 
             async for m in self.storage.all():
@@ -166,7 +166,7 @@ class Cache:
         therefore it is beneficial to load it right after the save.
         """
         m = await self.storage.save(name, tag, model)
-        async with self.lock:
+        async with self.lock.writer_lock:
             self.models[(m.name, m.tag)] = m
         return m
 
@@ -174,7 +174,7 @@ class Cache:
         fullname = (name, tag)
         # This is totally fine to loose the data from the cache but
         # leave it in the storage (due to unexpected error).
-        async with self.lock:
+        async with self.lock.writer_lock:
             if fullname in self.models:
                 del self.models[fullname]
         await self.storage.delete(name, tag)
@@ -190,5 +190,5 @@ class Cache:
     async def load(self, name: str, tag: str) -> Model:
         # Load the model from the parent storage when
         # it is missing in the cache.
-        async with self.lock:
+        async with self.lock.writer_lock:
             return await self.unsafe_load(name, tag)

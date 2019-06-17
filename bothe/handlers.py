@@ -105,3 +105,10 @@ class Remove:
         except NotFoundError as e:
             raise aiohttp.web.HTTPNotFound(text=str(e))
         return aiohttp.web.Response(status=aiohttp.web.HTTPOk.status_code)
+
+
+class Status:
+    """Handler that returns server status."""
+
+    async def __call__(self, req: aiohttp.web.Request) -> aiohttp.web.Response:
+        return aiohttp.web.json_response(dict(status="running"))

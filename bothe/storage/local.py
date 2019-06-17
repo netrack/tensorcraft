@@ -28,7 +28,7 @@ class FileSystem:
 
     @classmethod
     def new(cls,
-            root: str,
+            path: pathlib.Path,
             meta: bothe.storage.meta.DB,
             loader: bothe.model.Loader,
             logger: logging.Logger=bothe.logging.internal_logger):
@@ -39,15 +39,11 @@ class FileSystem:
         self.meta = meta
         self.logger = logger
         self.loader = loader
+        self.models_path = path.joinpath("models")
 
-        self.root = pathlib.Path(root)
-        self.models_path = self.root.joinpath("models")
-
-        # Since the construction of this object is performed before the
-        # start of the event loop, it is fine to call it just like this.
         self.models_path.mkdir(parents=True, exist_ok=True)
-
         self.executor = concurrent.futures.ThreadPoolExecutor()
+
         return self
 
     def _new_model(self, record: typing.Dict) -> bothe.model.Model:
