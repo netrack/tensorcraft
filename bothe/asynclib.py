@@ -9,7 +9,6 @@ import shutil
 def run(main):
     loop = asyncio.new_event_loop()
     try:
-        asyncio.set_event_loop(loop)
         return loop.run_until_complete(main)
     finally:
         loop.close()
