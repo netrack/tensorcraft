@@ -2,31 +2,54 @@ import aiorwlock
 import pathlib
 import tinydb
 import typing
+import uuid
+
+from bothe import asynclib
 
 
 class DB:
 
-    def __init__(self, path: pathlib.Path) -> None:
-        self.lock = aiorwlock.RWLock()
-        self.db = tinydb.TinyDB(path=path.joinpath("metadata.json"),
+    @classmethod
+    def new(cls, path: pathlib.Path):
+        self = cls()
+        self._rw_lock = aiorwlock.RWLock()
+        self._db = tinydb.TinyDB(path=path.joinpath("metadata.json"),
                                 default_table="metadata")
+        return self
 
     async def close(self) -> None:
-        async with self.lock.writer_lock:
-            self.db.close()
+        async with self._rw_lock.writer_lock:
+            self._db.close()
 
     async def get(self, cond) -> typing.Dict:
-        async with self.lock.reader_lock:
-            return self.db.get(cond)
+        async with self._rw_lock.reader_lock:
+            return self._db.get(cond)
 
     async def all(self) -> typing.Sequence[typing.Dict]:
-        async with self.lock.reader_lock:
-            return self.db.all()
+        async with self._rw_lock.reader_lock:
+            return self._db.all()
 
     async def insert(self, document: typing.Dict) -> None:
-        async with self.lock.writer_lock:
-            self.db.insert(document)
+        async with self._rw_lock.writer_lock:
+            self._db.insert(document)
 
     async def remove(self, cond) -> None:
-        async with self.lock.writer_lock:
-            self.db.remove(cond)
+        async with self._rw_lock.writer_lock:
+            self._db.remove(cond)
+
+    @asynclib.asynccontextmanager
+    async def write_locked(self):
+        async with self._rw_lock.writer_lock:
+            db = DB()
+            db._db = self._db
+            db._rw_lock = aiorwlock.RWLock(fast=True)
+            yield db
+
+
+def query_by_name_and_tag(name: str, tag: str):
+    q = tinydb.Query()
+    return (q.name == name) & (q.tag == tag)
+
+
+def query_by_id(id: uuid.UUID):
+    return tinydb.Query().id == id

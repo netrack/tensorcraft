@@ -32,6 +32,29 @@ async def remove_dir(path: pathlib.Path, ignore_errors: bool=False):
     shutil.rmtree(path, ignore_errors=ignore_errors)
 
 
+class _AsyncContextManager:
+
+    def __init__(self, async_generator):
+        self.agen = async_generator.__aiter__()
+
+    async def __aenter__(self):
+        return await self.agen.__anext__()
+
+    async def __aexit__(self, typ, value, traceback):
+        try:
+            await self.agen.__anext__()
+        except StopAsyncIteration:
+            return False
+
+
+def asynccontextmanager(func):
+    """Simple implementation of async context manager decorator."""
+    def _f(*args, **kwargs):
+        async_generator = func(*args, **kwargs)
+        return _AsyncContextManager(async_generator)
+    return _f
+
+
 # Prefer the run function from the standard library over the custom
 # implementation.
 run = asyncio.run if hasattr(asyncio, "run") else run

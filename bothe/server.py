@@ -38,7 +38,7 @@ class Server:
         loader = bothe.model.Loader(strategy=strategy, logger=logger)
 
         # A metadata storage with models details.
-        meta = bothe.storage.meta.DB(path=data_root)
+        meta = bothe.storage.meta.DB.new(path=data_root)
 
         storage = bothe.storage.local.FileSystem.new(
             path=data_root, meta=meta, loader=loader)
