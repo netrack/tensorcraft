@@ -24,3 +24,7 @@ class TestServerStart(aiohttptest.AioHTTPTestCase):
     async def test_must_create_directory(self):
         resp = await self.client.get("/status")
         self.assertEqual(resp.status, 200)
+
+
+if __name__ == "__main__":
+    main()

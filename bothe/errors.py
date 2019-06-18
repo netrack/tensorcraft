@@ -15,33 +15,29 @@ class InputShapeError(Exception):
             self.expected_dims, self.actual_dims)
 
 
-class NotFoundError(Exception):
-    """Exception raised on missing model
-
-    Attributes:
-        name --- model name
-        tag -- model tag
-    """
+class _ModelError(Exception):
 
     def __init__(self, name: str, tag: str):
         self.name = name
         self.tag = tag
+
+
+class NotFoundError(_ModelError):
+    """Exception raised on missing model."""
 
     def __str__(self):
         return "Model {0}:{1} not found".format(self.name, self.tag)
 
 
-class NotLoadedError(Exception):
-    """Exception raised on attempt to use not loaded model.
-
-    Attributes:
-        name -- model name
-        tag -- model tag
-    """
-
-    def __init__(self, name: str, tag: str):
-        self.name = name
-        self.tag = tag
+class NotLoadedError(_ModelError):
+    """Exception raised on attempt to use not loaded model."""
 
     def __str__(self):
         return "Model {0}:{1} is not loaded".format(self.name, self.tag)
+
+
+class DuplicateError(_ModelError):
+    """Exception raised on attempt to save model with the same name and tag."""
+
+    def __str__(self):
+        return "Model {0}:{1} is a duplicate".format(self.name, self.tag)

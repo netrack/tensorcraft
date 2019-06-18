@@ -3,7 +3,7 @@ import io
 import json
 
 from bothe.model import Model
-from bothe.errors import InputShapeError, NotFoundError
+from bothe.errors import InputShapeError, NotFoundError, DuplicateError
 
 
 class Push:
@@ -27,8 +27,11 @@ class Push:
         if not req.can_read_body:
             raise aiohttp.web.HTTPBadRequest(text="request has no body")
 
-        model_stream = io.BytesIO(await req.read())
-        await self.models.save(name, tag, model_stream)
+        try:
+            model_stream = io.BytesIO(await req.read())
+            await self.models.save(name, tag, model_stream)
+        except DuplicateError as e:
+            raise aiohttp.web.HTTPConflict(text=str(e))
 
         return aiohttp.web.Response(status=aiohttp.web.HTTPCreated.status_code)
 

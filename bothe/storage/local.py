@@ -14,6 +14,7 @@ import bothe.model
 import bothe.storage.meta
 
 from bothe import asynclib
+from bothe.storage.meta import query_by_name_and_tag, query_by_id
 
 
 Model = tinydb.Query()
@@ -46,9 +47,9 @@ class FileSystem:
 
         return self
 
-    def _new_model(self, record: typing.Dict) -> bothe.model.Model:
-        path = self.models_path.joinpath(record["id"])
-        return bothe.model.Model(path=path, loader=self.loader, **record)
+    def _new_model(self, document: typing.Dict) -> bothe.model.Model:
+        path = self.models_path.joinpath(document["id"])
+        return bothe.model.Model(path=path, loader=self.loader, **document)
 
     def await_in_thread(self, task: typing.Coroutine):
         """Run the given function within an instance executor."""
@@ -61,9 +62,9 @@ class FileSystem:
         The method returns a list of not loaded models, therefore before using
         them (e.g. for prediction), models must be loaded.
         """
-        for record in await self.meta.all():
-            path = self.models_path.joinpath(record["id"])
-            m = bothe.model.Model(path=path, loader=self.loader, **record)
+        for document in await self.meta.all():
+            path = self.models_path.joinpath(document["id"])
+            m = bothe.model.Model(path=path, loader=self.loader, **document)
             yield m
 
     async def save(self, name: str, tag: str,
@@ -85,8 +86,13 @@ class FileSystem:
             m = bothe.model.Model(model_id, name, tag, model_path, self.loader)
             m = await self.await_in_thread(asyncio.coroutine(m.load)())
 
-            # Insert the model metadata only on the last step.
-            await self.meta.insert(m.to_dict())
+            async with self.meta.write_locked() as meta:
+                if await meta.get(query_by_name_and_tag(name, tag)):
+                    self.logger.debug("Model %s already exists", m)
+                    raise bothe.errors.DuplicateError(name, tag)
+
+                # Insert the model metadata only on the last step.
+                await meta.insert(m.to_dict())
 
             # Model successfully loaded, so now it can be moved to the original
             # data root directory.
@@ -109,7 +115,7 @@ class FileSystem:
         try:
             # Model found, remove metadata from the database.
             m = await self._load(name, tag)
-            await self.meta.remove(Model.id == m.id)
+            await self.meta.remove(query_by_id(m.id))
 
             # Remove the model data from the storage.
             await self.await_in_thread(asynclib.remove_dir(m.path))
@@ -119,10 +125,10 @@ class FileSystem:
             raise bothe.errors.NotFoundError(name, tag)
 
     async def _load(self, name: str, tag: str):
-        record = await self.meta.get((Model.name == name) & (Model.tag == tag))
-        if not record:
+        document = await self.meta.get(query_by_name_and_tag(name, tag))
+        if not document:
             raise bothe.errors.NotFoundError(name, tag)
-        return self._new_model(record)
+        return self._new_model(document)
 
     async def load(self, name: str, tag: str) -> bothe.model.Model:
         """Load model with the given name and tag."""
