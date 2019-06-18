@@ -1,8 +1,8 @@
 import argparse
 import sys
 
-import bothe
-import bothe.shell.commands
+import knuckle
+import knuckle.shell.commands
 
 
 class App:
@@ -26,10 +26,10 @@ class App:
 
 
 def main():
-    a = App(prog="bothe", modules=[bothe.shell.commands.Server,
-                                   bothe.shell.commands.Push,
-                                   bothe.shell.commands.Remove,
-                                   bothe.shell.commands.List])
+    a = App(prog="knuckle", modules=[knuckle.shell.commands.Server,
+                                     knuckle.shell.commands.Push,
+                                     knuckle.shell.commands.Remove,
+                                     knuckle.shell.commands.List])
 
     a.argument(["-s", "--service-url"],
                dict(help="service endpoint",
@@ -38,7 +38,7 @@ def main():
     a.argument(["-v", "--version"],
                dict(help="print version and exit",
                     action="version",
-                    version="%(prog)s {0}".format(bothe.__version__)))
+                    version="%(prog)s {0}".format(knuckle.__version__)))
 
     sys.exit(a.start().value)
 

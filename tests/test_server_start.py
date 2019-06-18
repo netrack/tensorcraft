@@ -3,7 +3,7 @@ import aiohttp.web
 import pathlib
 import tempfile
 
-from bothe.server import Server
+from knuckle.server import Server
 
 
 class TestServerStart(aiohttptest.AioHTTPTestCase):

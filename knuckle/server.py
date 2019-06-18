@@ -4,14 +4,14 @@ import inspect
 import logging
 import pathlib
 
-import bothe
-import bothe.logging
-import bothe.model
-import bothe.storage.local
-import bothe.storage.meta
+import knuckle
+import knuckle.logging
+import knuckle.model
+import knuckle.storage.local
+import knuckle.storage.meta
 
 from aiojobs.aiohttp import atomic, setup
-from bothe import handlers
+from knuckle import handlers
 
 
 class Server:
@@ -21,8 +21,8 @@ class Server:
     async def new(cls, data_root: str, host: str=None, port: str=None,
                   preload: bool=False,
                   close_timeout: int=10,
-                  strategy: str=bothe.model.Strategy.No.value,
-                  logger: logging.Logger=bothe.logging.internal_logger):
+                  strategy: str=knuckle.model.Strategy.No.value,
+                  logger: logging.Logger=knuckle.logging.internal_logger):
         """Create new instance of the server."""
 
         self = cls()
@@ -35,15 +35,15 @@ class Server:
 
         # TODO: use different execution strategies for models and
         # fallback to the server-default execution strategy.
-        loader = bothe.model.Loader(strategy=strategy, logger=logger)
+        loader = knuckle.model.Loader(strategy=strategy, logger=logger)
 
         # A metadata storage with models details.
-        meta = bothe.storage.meta.DB.new(path=data_root)
+        meta = knuckle.storage.meta.DB.new(path=data_root)
 
-        storage = bothe.storage.local.FileSystem.new(
+        storage = knuckle.storage.local.FileSystem.new(
             path=data_root, meta=meta, loader=loader)
 
-        models = await bothe.model.Cache.new(
+        models = await knuckle.model.Cache.new(
             storage=storage, preload=preload)
 
         self.app = aiohttp.web.Application()
@@ -70,7 +70,7 @@ class Server:
         return self
 
     async def _prepare_response(self, request, response):
-        response.headers["Server"] = "Bothe/{0}".format(bothe.__version__)
+        response.headers["Server"] = "Bothe/{0}".format(knuckle.__version__)
 
     @classmethod
     def start(cls, **kwargs):
