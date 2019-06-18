@@ -3,10 +3,10 @@ import enum
 import importlib
 import pathlib
 
-import bothe.client
-import bothe.errors
+import knuckle.client
+import knuckle.errors
 
-from bothe import asynclib
+from knuckle import asynclib
 
 
 class ExitStatus(enum.Enum):
@@ -84,7 +84,7 @@ class Server(Command):
         (["--data-root"],
          dict(metavar="PATH",
               help="root directory of persistent state",
-              default=".var/lib/bothe")),
+              default=".var/lib/knuckle")),
         (["--strategy"],
          dict(metavar="STRATEGY",
               default="mirrored",
@@ -96,7 +96,7 @@ class Server(Command):
               help="preload all models into the memory before start"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        server = importlib.import_module("bothe.server")
+        server = importlib.import_module("knuckle.server")
         server.Server.start(**args.__dict__)
         return ExitStatus.Success
 
@@ -125,7 +125,7 @@ class Push(Command):
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         print("loading model {0}:{1}".format(args.name, args.tag))
-        client = bothe.client.Client(service_url=args.service_url)
+        client = knuckle.client.Client(service_url=args.service_url)
 
         path = pathlib.Path(args.path)
         task = client.push(args.name, args.tag, path)
@@ -159,12 +159,12 @@ class Remove(Command):
               help="model tag"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = bothe.client.Client(service_url=args.service_url)
+        client = knuckle.client.Client(service_url=args.service_url)
         task = client.remove(args.name, args.tag)
 
         try:
             asynclib.run(task)
-        except bothe.errors.NotFoundError as e:
+        except knuckle.errors.NotFoundError as e:
             if not args.quiet:
                 print("{0}.".format(e))
                 return ExitStatus.Failure
@@ -184,7 +184,7 @@ class List(Command):
     arguments = []
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = bothe.client.Client(service_url=args.service_url)
+        client = knuckle.client.Client(service_url=args.service_url)
         task = client.list()
 
         try:

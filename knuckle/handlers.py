@@ -2,8 +2,8 @@ import aiohttp.web
 import io
 import json
 
-from bothe.model import Model
-from bothe.errors import InputShapeError, NotFoundError, DuplicateError
+from knuckle.model import Model
+from knuckle.errors import InputShapeError, NotFoundError, DuplicateError
 
 
 class Push:

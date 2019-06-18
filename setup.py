@@ -1,4 +1,4 @@
-import bothe
+import knuckle
 import os
 import setuptools
 
@@ -11,14 +11,14 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as md:
 
 
 setuptools.setup(
-    name="bothe",
-    version=bothe.__version__,
+    name="knuckle",
+    version=knuckle.__version__,
 
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="ML serving engine",
 
-    url="https://github.com/netrack/bothe",
+    url="https://github.com/netrack/knuckle",
     author="Yasha Bubnov",
     author_email="girokompass@gmail.com",
 
@@ -43,6 +43,6 @@ setuptools.setup(
     ],
 
     entry_points={
-        "console_scripts": ["bothe = bothe.shell.main:main"],
+        "console_scripts": ["knuckle = knuckle.shell.main:main"],
     },
 )

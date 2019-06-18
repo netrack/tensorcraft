@@ -8,16 +8,13 @@ import tinydb
 import typing
 import uuid
 
-import bothe.errors
-import bothe.logging
-import bothe.model
-import bothe.storage.meta
+import knuckle.errors
+import knuckle.logging
+import knuckle.model
+import knuckle.storage.meta
 
-from bothe import asynclib
-from bothe.storage.meta import query_by_name_and_tag, query_by_id
-
-
-Model = tinydb.Query()
+from knuckle import asynclib
+from knuckle.storage.meta import query_by_name_and_tag, query_by_id
 
 
 class FileSystem:
@@ -30,9 +27,9 @@ class FileSystem:
     @classmethod
     def new(cls,
             path: pathlib.Path,
-            meta: bothe.storage.meta.DB,
-            loader: bothe.model.Loader,
-            logger: logging.Logger=bothe.logging.internal_logger):
+            meta: knuckle.storage.meta.DB,
+            loader: knuckle.model.Loader,
+            logger: logging.Logger=knuckle.logging.internal_logger):
 
         self = cls()
         logger.info("Using file storage backing engine")
@@ -47,16 +44,16 @@ class FileSystem:
 
         return self
 
-    def _new_model(self, document: typing.Dict) -> bothe.model.Model:
+    def _new_model(self, document: typing.Dict) -> knuckle.model.Model:
         path = self.models_path.joinpath(document["id"])
-        return bothe.model.Model(path=path, loader=self.loader, **document)
+        return knuckle.model.Model(path=path, loader=self.loader, **document)
 
     def await_in_thread(self, task: typing.Coroutine):
         """Run the given function within an instance executor."""
         loop = asyncio.get_event_loop()
         return loop.run_in_executor(self.executor, asynclib.run, task)
 
-    async def all(self) -> typing.Sequence[bothe.model.Model]:
+    async def all(self) -> typing.Sequence[knuckle.model.Model]:
         """List available models and their tags.
 
         The method returns a list of not loaded models, therefore before using
@@ -64,11 +61,11 @@ class FileSystem:
         """
         for document in await self.meta.all():
             path = self.models_path.joinpath(document["id"])
-            m = bothe.model.Model(path=path, loader=self.loader, **document)
+            m = knuckle.model.Model(path=path, loader=self.loader, **document)
             yield m
 
     async def save(self, name: str, tag: str,
-                   model: io.IOBase) -> bothe.model.Model:
+                   model: io.IOBase) -> knuckle.model.Model:
         """Save the model into the local storage.
 
         Extracts the TAR archive into the data root directory.
@@ -83,13 +80,13 @@ class FileSystem:
             # Now load the model into the memory, to pass all validations.
             self.logger.debug("Ensuring model has correct format")
 
-            m = bothe.model.Model(model_id, name, tag, model_path, self.loader)
+            m = knuckle.model.Model(model_id, name, tag, model_path, self.loader)
             m = await self.await_in_thread(asyncio.coroutine(m.load)())
 
             async with self.meta.write_locked() as meta:
                 if await meta.get(query_by_name_and_tag(name, tag)):
                     self.logger.debug("Model %s already exists", m)
-                    raise bothe.errors.DuplicateError(name, tag)
+                    raise knuckle.errors.DuplicateError(name, tag)
 
                 # Insert the model metadata only on the last step.
                 await meta.insert(m.to_dict())
@@ -104,7 +101,7 @@ class FileSystem:
             # and ensure the metadata database does not store any information.
             #
             # The caller have to ensure atomicity of this operation.
-            await self.meta.remove(Model.id == model_id)
+            await self.meta.remove(query_by_id(model_id))
 
             task = asynclib.remove_dir(model_path, ignore_errors=True)
             await self.await_in_thread(task)
@@ -122,15 +119,15 @@ class FileSystem:
 
             self.logger.info("Removed model %s:%s", name, tag)
         except FileNotFoundError:
-            raise bothe.errors.NotFoundError(name, tag)
+            raise knuckle.errors.NotFoundError(name, tag)
 
     async def _load(self, name: str, tag: str):
         document = await self.meta.get(query_by_name_and_tag(name, tag))
         if not document:
-            raise bothe.errors.NotFoundError(name, tag)
+            raise knuckle.errors.NotFoundError(name, tag)
         return self._new_model(document)
 
-    async def load(self, name: str, tag: str) -> bothe.model.Model:
+    async def load(self, name: str, tag: str) -> knuckle.model.Model:
         """Load model with the given name and tag."""
         m = await self._load(name, tag)
         return await self.await_in_thread(asyncio.coroutine(m.load)())

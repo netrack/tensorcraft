@@ -4,7 +4,7 @@ import tinydb
 import typing
 import uuid
 
-from bothe import asynclib
+from knuckle import asynclib
 
 
 class DB:
