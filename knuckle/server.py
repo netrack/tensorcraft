@@ -1,8 +1,10 @@
 import aiohttp
 import aiohttp.web
+import asyncio
 import inspect
 import logging
 import pathlib
+import pid
 
 import knuckle
 import knuckle.logging
@@ -18,7 +20,8 @@ class Server:
     """Serve the models."""
 
     @classmethod
-    async def new(cls, data_root: str, host: str=None, port: str=None,
+    async def new(cls, data_root: str, pidfile: str,
+                  host: str=None, port: str=None,
                   preload: bool=False,
                   close_timeout: int=10,
                   strategy: str=knuckle.model.Strategy.No.value,
@@ -26,8 +29,9 @@ class Server:
         """Create new instance of the server."""
 
         self = cls()
-        self.host = host
-        self.port = port
+ 
+        pidfile = pathlib.Path(pidfile)
+        self.pid = pid.PidFile(piddir=pidfile.parent, pidname=pidfile.name)
 
         # Create a data root directory where all server data is persisted.
         data_root = pathlib.Path(data_root)
@@ -47,8 +51,11 @@ class Server:
             storage=storage, preload=preload)
 
         self.app = aiohttp.web.Application()
+
+        self.app.on_startup.append(cls.app_callback(self.pid.create))
         self.app.on_response_prepare.append(self._prepare_response)
-        self.app.on_shutdown.append(cls.wrap_shutdown(meta.close))
+        self.app.on_shutdown.append(cls.app_callback(meta.close))
+        self.app.on_shutdown.append(cls.app_callback(self.pid.close))
 
         self.app.add_routes([
             aiohttp.web.put(
@@ -70,7 +77,7 @@ class Server:
         return self
 
     async def _prepare_response(self, request, response):
-        response.headers["Server"] = "Bothe/{0}".format(knuckle.__version__)
+        response.headers["Server"] = "Knuckle/{0}".format(knuckle.__version__)
 
     @classmethod
     def start(cls, **kwargs):
@@ -89,10 +96,12 @@ class Server:
                             host=kv.get("host"), port=kv.get("port"))
 
     @classmethod
-    def wrap_shutdown(cls, awaitable):
-        async def on_shutdown(app):
-            await awaitable()
-        return on_shutdown
+    def app_callback(cls, awaitable):
+        async def on_signal(app):
+            coroutine = awaitable()
+            if asyncio.iscoroutine(coroutine):
+                await coroutine
+        return on_signal
 
 
 if __name__ == "__main__":

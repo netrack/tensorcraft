@@ -17,7 +17,9 @@ class TestServerStart(aiohttptest.AioHTTPTestCase):
 
     async def get_application(self) -> aiohttp.web.Application:
         data_root = pathlib.Path(self.workdir.name).joinpath("non/existing")
-        server = await Server.new(data_root=data_root)
+
+        server = await Server.new(data_root=data_root,
+                                  pidfile=data_root.joinpath("knuckle.pid"))
         return server.app
 
     @aiohttptest.unittest_run_loop

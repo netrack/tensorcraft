@@ -94,7 +94,11 @@ class List:
 
 
 class Remove:
-    """Handler that removes a model."""
+    """Handler that removes a model.
+
+    Attributes:
+        models -- container of models
+    """
 
     def __init__(self, models):
         self.models = models
