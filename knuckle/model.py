@@ -23,6 +23,12 @@ class Strategy(enum.Enum):
     MultiWorkerMirrored = "multi_worker_mirrored"
 
 
+class Tag(enum.Enum):
+    """Magic tags of the models."""
+
+    Latest = "latest"
+
+
 class NoneStrategy:
     """A strategy that does nothing additional to the loaded model.
 

@@ -25,6 +25,10 @@ class DB:
         async with self._rw_lock.reader_lock:
             return self._db.get(cond)
 
+    async def search(self, cond) -> typing.Dict:
+        async with self._rw_lock.reader_lock:
+            return self._db.search(cond)
+
     async def all(self) -> typing.Sequence[typing.Dict]:
         async with self._rw_lock.reader_lock:
             return self._db.all()
@@ -49,6 +53,10 @@ class DB:
 def query_by_name_and_tag(name: str, tag: str):
     q = tinydb.Query()
     return (q.name == name) & (q.tag == tag)
+
+
+def query_by_name(name: str):
+    return tinydb.Query.name == name
 
 
 def query_by_id(id: uuid.UUID):

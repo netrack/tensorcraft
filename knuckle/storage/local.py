@@ -67,7 +67,7 @@ class FileSystem:
                    stream: io.IOBase) -> model.Model:
         """Save the model into the local storage.
 
-        Extracts the TAR archive into the data root directory.
+        Extracts the TAR archive into the data directory.
         """
         m = model.Model.new(name, tag, self.models_path, self.loader)
 
@@ -120,12 +120,22 @@ class FileSystem:
             raise knuckle.errors.NotFoundError(name, tag)
 
     async def _load(self, name: str, tag: str):
-        document = await self.meta.get(query_by_name_and_tag(name, tag))
-        if not document:
+        query = query_by_name_and_tag(name, tag)
+        if tag == model.Tag.Latest.value:
+            query = query_by_name(name)
+
+        documents = await self.meta.search(document)
+        if not documents:
             raise knuckle.errors.NotFoundError(name, tag)
-        return self._new_model(document)
+
+        sorted(documents, key=lambda d: d["created_at"], reverse=True)
+        return self._new_model(document[0])
 
     async def load(self, name: str, tag: str) -> model.Model:
-        """Load model with the given name and tag."""
+        """Load model with the given name and tag.
+        
+        When the 'latest' tag is specified, the most recent model from the
+        group specified by name will be returned.
+        """
         m = await self._load(name, tag)
         return await self.await_in_thread(asyncio.coroutine(m.load)())
