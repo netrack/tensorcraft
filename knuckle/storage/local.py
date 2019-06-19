@@ -6,14 +6,13 @@ import pathlib
 import shutil
 import tinydb
 import typing
-import uuid
 
 import knuckle.errors
 import knuckle.logging
-import knuckle.model
 import knuckle.storage.meta
 
 from knuckle import asynclib
+from knuckle import model
 from knuckle.storage.meta import query_by_name_and_tag, query_by_id
 
 
@@ -28,7 +27,7 @@ class FileSystem:
     def new(cls,
             path: pathlib.Path,
             meta: knuckle.storage.meta.DB,
-            loader: knuckle.model.Loader,
+            loader: model.Loader,
             logger: logging.Logger=knuckle.logging.internal_logger):
 
         self = cls()
@@ -44,16 +43,16 @@ class FileSystem:
 
         return self
 
-    def _new_model(self, document: typing.Dict) -> knuckle.model.Model:
+    def _new_model(self, document: typing.Dict) -> model.Model:
         path = self.models_path.joinpath(document["id"])
-        return knuckle.model.Model(path=path, loader=self.loader, **document)
+        return model.Model(path=path, loader=self.loader, **document)
 
     def await_in_thread(self, task: typing.Coroutine):
         """Run the given function within an instance executor."""
         loop = asyncio.get_event_loop()
         return loop.run_in_executor(self.executor, asynclib.run, task)
 
-    async def all(self) -> typing.Sequence[knuckle.model.Model]:
+    async def all(self) -> typing.Sequence[model.Model]:
         """List available models and their tags.
 
         The method returns a list of not loaded models, therefore before using
@@ -61,28 +60,26 @@ class FileSystem:
         """
         for document in await self.meta.all():
             path = self.models_path.joinpath(document["id"])
-            m = knuckle.model.Model(path=path, loader=self.loader, **document)
+            m = model.Model(path=path, loader=self.loader, **document)
             yield m
 
     async def save(self, name: str, tag: str,
-                   model: io.IOBase) -> knuckle.model.Model:
+                   stream: io.IOBase) -> model.Model:
         """Save the model into the local storage.
 
         Extracts the TAR archive into the data root directory.
         """
-        model_id = uuid.uuid4()
-        model_path = self.models_path.joinpath(model_id.hex)
+        m = model.Model.new(name, tag, self.models_path, self.loader)
 
         try:
-            task = asynclib.extract_tar(fileobj=model, dest=model_path)
+            task = asynclib.extract_tar(fileobj=stream, dest=m.path)
             await self.await_in_thread(task)
 
             # Now load the model into the memory, to pass all validations.
             self.logger.debug("Ensuring model has correct format")
 
-            m = knuckle.model.Model(model_id, name, tag,
-                                    model_path, self.loader)
-            m = await self.await_in_thread(asyncio.coroutine(m.load)())
+            task = asyncio.coroutine(m.load)()
+            m = await self.await_in_thread(task)
 
             async with self.meta.write_locked() as meta:
                 if await meta.get(query_by_name_and_tag(name, tag)):
@@ -94,7 +91,7 @@ class FileSystem:
 
             # Model successfully loaded, so now it can be moved to the original
             # data root directory.
-            self.logger.info("Pushing model %s to %s", m, model_path)
+            self.logger.info("Pushing model %s to %s", m, m.path)
             return m
 
         except Exception as e:
@@ -102,9 +99,9 @@ class FileSystem:
             # and ensure the metadata database does not store any information.
             #
             # The caller have to ensure atomicity of this operation.
-            await self.meta.remove(query_by_id(model_id))
+            await self.meta.remove(query_by_id(m.id))
 
-            task = asynclib.remove_dir(model_path, ignore_errors=True)
+            task = asynclib.remove_dir(m.path, ignore_errors=True)
             await self.await_in_thread(task)
             raise e
 
@@ -128,7 +125,7 @@ class FileSystem:
             raise knuckle.errors.NotFoundError(name, tag)
         return self._new_model(document)
 
-    async def load(self, name: str, tag: str) -> knuckle.model.Model:
+    async def load(self, name: str, tag: str) -> model.Model:
         """Load model with the given name and tag."""
         m = await self._load(name, tag)
         return await self.await_in_thread(asyncio.coroutine(m.load)())

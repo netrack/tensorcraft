@@ -105,7 +105,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
             self.assertEqual(1, len(data))
 
             data = data[0]
-            data.pop("id")
+            data = dict(name=data.get("name"), tag=data.get("tag"))
 
             self.assertEqual(data, dict(name=self.model_name,
                                         tag=self.model_tag))

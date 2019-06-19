@@ -12,6 +12,8 @@ import uuid
 import knuckle.errors
 import knuckle.logging
 
+from datetime import datetime
+
 
 class Strategy(enum.Enum):
     """Strategy is an execution strategy of the model."""
@@ -75,14 +77,29 @@ class Model:
         self = cls(**kwargs)
         return self
 
+    @classmethod
+    def new(cls, name: str, tag: str, root: pathlib.Path, loader: Loader=None):
+        model_id = uuid.uuid4()
+        model_path = root.joinpath(model_id.hex)
+        model_created_at = datetime.utcnow().timestamp()
+
+        return cls(id=model_id, name=name, tag=tag,
+                   created_at=model_created_at,
+                   path=model_path, loader=loader)
+
     def to_dict(self):
-        return dict(id=self.id.hex, name=self.name, tag=self.tag)
+        return dict(id=self.id.hex,
+                    name=self.name,
+                    tag=self.tag,
+                    created_at=self.created_at)
 
     def __init__(self, id: typing.Union[uuid.UUID, str],
-                 name: str, tag: str, path: str=None, loader: Loader=None):
+                 name: str, tag: str, created_at: float,
+                 path: str=None, loader: Loader=None):
         self.id = uuid.UUID(str(id))
         self.name = name
         self.tag = tag
+        self.created_at = created_at
 
         self.loader = loader
         self.path = path
