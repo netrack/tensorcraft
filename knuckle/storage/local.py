@@ -80,7 +80,8 @@ class FileSystem:
             # Now load the model into the memory, to pass all validations.
             self.logger.debug("Ensuring model has correct format")
 
-            m = knuckle.model.Model(model_id, name, tag, model_path, self.loader)
+            m = knuckle.model.Model(model_id, name, tag,
+                                    model_path, self.loader)
             m = await self.await_in_thread(asyncio.coroutine(m.load)())
 
             async with self.meta.write_locked() as meta:

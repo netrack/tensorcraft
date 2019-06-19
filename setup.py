@@ -38,6 +38,7 @@ setuptools.setup(
         "aiohttp>=3.5.4",
         "humanize>=0.5.1",
         "numpy>=1.16.3",
+        "pid>=2.2.3",
         "tensorflow>=2.0.0a0",
         "tinydb>=3.13.0",
     ],

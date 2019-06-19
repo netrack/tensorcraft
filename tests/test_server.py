@@ -9,9 +9,8 @@ import tensorflow as tf
 import unittest
 import uuid
 
-import knuckle.server
-
 from knuckle import asynclib
+from knuckle import server
 from tests import asynctest
 
 
@@ -60,16 +59,17 @@ class TestServer(aiohttptest.AioHTTPTestCase):
 
     async def get_application(self) -> aiohttp.web.Application:
         """Create the server application."""
-        server = await knuckle.server.Server.new(
+        s = await server.Server.new(
             strategy="mirrored",
+            pidfile=str(self.workpath.joinpath("k.pid")),
             data_root=str(self.workpath))
-        return server.app
+        return s.app
 
     @asynclib.asynccontextmanager
     async def with_model(self) -> str:
         try:
             # Upload the serialized model to the server.
-            data = knuckle.asynclib.reader(self.tarpath)
+            data = asynclib.reader(self.tarpath)
             url = "/models/{0}/{1}".format(self.model_name, self.model_tag)
 
             # Ensure the model has been uploaded.
@@ -83,7 +83,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
     @aiohttptest.unittest_run_loop
     async def test_create_twice(self):
         async with self.with_model() as url:
-            data = knuckle.asynclib.reader(self.tarpath)
+            data = asynclib.reader(self.tarpath)
 
             resp = await self.client.put(url, data=data)
             self.assertEqual(resp.status, 409)
