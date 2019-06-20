@@ -102,7 +102,8 @@ class TestServer(aiohttptest.AioHTTPTestCase):
             self.assertEqual(resp.status, 200)
 
             data = await resp.json()
-            self.assertEqual(1, len(data))
+            print(data)
+            self.assertEqual(2, len(data))
 
             data = data[0]
             data = dict(name=data.get("name"), tag=data.get("tag"))

@@ -37,6 +37,10 @@ class DB:
         async with self._rw_lock.writer_lock:
             self._db.insert(document)
 
+    async def upsert(self, document: typing.Dict, cond) -> None:
+        async with self._rw_lock.writer_lock:
+            self._db.upsert(document, cond)
+
     async def remove(self, cond) -> None:
         async with self._rw_lock.writer_lock:
             self._db.remove(cond)

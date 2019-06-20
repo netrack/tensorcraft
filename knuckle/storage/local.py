@@ -71,6 +71,13 @@ class FileSystem:
         """
         m = model.Model.new(name, tag, self.models_path, self.loader)
 
+        # Since the saving is happening right now, the latest model
+        # will obviously be the current one.
+        latest = m.copy()
+
+        latest.tag = model.Tag.Latest.value
+        latest.id = m.id
+
         try:
             task = asynclib.extract_tar(fileobj=stream, dest=m.path)
             await self.await_in_thread(task)
@@ -86,8 +93,11 @@ class FileSystem:
                     self.logger.debug("Model %s already exists", m)
                     raise knuckle.errors.DuplicateError(name, tag)
 
-                # Insert the model metadata only on the last step.
+                # Insert the model metadata, and update the latest model link.
                 await meta.insert(m.to_dict())
+
+                latest_query = query_by_name_and_tag(latest.name, latest.tag)
+                await meta.upsert(latest.to_dict(), latest_query)
 
             # Model successfully loaded, so now it can be moved to the original
             # data root directory.
@@ -120,16 +130,10 @@ class FileSystem:
             raise knuckle.errors.NotFoundError(name, tag)
 
     async def _load(self, name: str, tag: str):
-        query = query_by_name_and_tag(name, tag)
-        if tag == model.Tag.Latest.value:
-            query = query_by_name(name)
-
-        documents = await self.meta.search(document)
-        if not documents:
+        document = await self.meta.get(query_by_name_and_tag(name, tag))
+        if not document:
             raise knuckle.errors.NotFoundError(name, tag)
-
-        sorted(documents, key=lambda d: d["created_at"], reverse=True)
-        return self._new_model(document[0])
+        return self._new_model(document)
 
     async def load(self, name: str, tag: str) -> model.Model:
         """Load model with the given name and tag.

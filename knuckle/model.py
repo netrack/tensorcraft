@@ -1,6 +1,7 @@
 import aiorwlock
 import enum
 import contextlib
+import copy
 import io
 import logging
 import numpy
@@ -110,6 +111,9 @@ class Model:
         self.loader = loader
         self.path = path
         self.model = None
+
+    def copy(self):
+        return copy.copy(self)
 
     def loaded(self):
         """True when the model is loaded and False otherwise."""
