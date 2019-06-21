@@ -1,6 +1,7 @@
 import aiorwlock
 import enum
 import contextlib
+import copy
 import io
 import logging
 import numpy
@@ -12,6 +13,8 @@ import uuid
 import knuckle.errors
 import knuckle.logging
 
+from datetime import datetime
+
 
 class Strategy(enum.Enum):
     """Strategy is an execution strategy of the model."""
@@ -19,6 +22,12 @@ class Strategy(enum.Enum):
     No = "none"
     Mirrored = "mirrored"
     MultiWorkerMirrored = "multi_worker_mirrored"
+
+
+class Tag(enum.Enum):
+    """Magic tags of the models."""
+
+    Latest = "latest"
 
 
 class NoneStrategy:
@@ -75,18 +84,36 @@ class Model:
         self = cls(**kwargs)
         return self
 
+    @classmethod
+    def new(cls, name: str, tag: str, root: pathlib.Path, loader: Loader=None):
+        model_id = uuid.uuid4()
+        model_path = root.joinpath(model_id.hex)
+        model_created_at = datetime.utcnow().timestamp()
+
+        return cls(id=model_id, name=name, tag=tag,
+                   created_at=model_created_at,
+                   path=model_path, loader=loader)
+
     def to_dict(self):
-        return dict(id=self.id.hex, name=self.name, tag=self.tag)
+        return dict(id=self.id.hex,
+                    name=self.name,
+                    tag=self.tag,
+                    created_at=self.created_at)
 
     def __init__(self, id: typing.Union[uuid.UUID, str],
-                 name: str, tag: str, path: str=None, loader: Loader=None):
+                 name: str, tag: str, created_at: float,
+                 path: str=None, loader: Loader=None):
         self.id = uuid.UUID(str(id))
         self.name = name
         self.tag = tag
+        self.created_at = created_at
 
         self.loader = loader
         self.path = path
         self.model = None
+
+    def copy(self):
+        return copy.copy(self)
 
     def loaded(self):
         """True when the model is loaded and False otherwise."""
@@ -137,11 +164,14 @@ class Cache:
         self.lock = aiorwlock.RWLock()
         self.models = {}
 
+        self.storage.on_save.append(self.save_to_cache)
+        self.storage.on_delete.append(self.delete_from_cache)
+
         if not preload:
             return self
 
         async for m in self.all():
-            logger.info("Loading {0}:{1} model".format(m.name, m.tag))
+            logger.info("Loading {0} model".format(m))
             await self.unsafe_load(m.name, m.tag)
 
         return self
@@ -166,18 +196,24 @@ class Cache:
         therefore it is beneficial to load it right after the save.
         """
         m = await self.storage.save(name, tag, model)
-        async with self.lock.writer_lock:
-            self.models[(m.name, m.tag)] = m
+        await self.save_to_cache(m)
         return m
 
+    async def save_to_cache(self, m: Model) -> None:
+        async with self.lock.writer_lock:
+            self.models[(m.name, m.tag)] = m
+
     async def delete(self, name: str, tag: str) -> None:
-        fullname = (name, tag)
         # This is totally fine to loose the data from the cache but
         # leave it in the storage (due to unexpected error).
-        async with self.lock.writer_lock:
-            if fullname in self.models:
-                del self.models[fullname]
+        await self.delete_from_cache(name, tag)
         await self.storage.delete(name, tag)
+
+    async def delete_from_cache(self, name: str, tag: str) -> None:
+        async with self.lock.writer_lock:
+            key = (name, tag)
+            if key in self.models:
+                del self.models[key]
 
     async def unsafe_load(self, name: str, tag: str) -> Model:
         """Load the model into the internal cache without acquiring the lock."""

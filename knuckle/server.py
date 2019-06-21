@@ -10,10 +10,11 @@ import knuckle
 import knuckle.logging
 import knuckle.model
 import knuckle.storage.local
-import knuckle.storage.meta
 
 from aiojobs.aiohttp import atomic, setup
+
 from knuckle import handlers
+from knuckle.storage import metadata
 
 
 class Server:
@@ -42,7 +43,7 @@ class Server:
         loader = knuckle.model.Loader(strategy=strategy, logger=logger)
 
         # A metadata storage with models details.
-        meta = knuckle.storage.meta.DB.new(path=data_root)
+        meta = metadata.DB.new(path=data_root)
 
         storage = knuckle.storage.local.FileSystem.new(
             path=data_root, meta=meta, loader=loader)
