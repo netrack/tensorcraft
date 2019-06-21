@@ -168,7 +168,7 @@ class Cache:
             return self
 
         async for m in self.all():
-            logger.info("Loading {0}:{1} model".format(m.name, m.tag))
+            logger.info("Loading {0} model".format(m))
             await self.unsafe_load(m.name, m.tag)
 
         return self
