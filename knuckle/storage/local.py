@@ -13,6 +13,7 @@ import knuckle.logging
 
 from knuckle import asynclib
 from knuckle import model
+from knuckle import signal
 from knuckle.storage import metadata
 from knuckle.storage.metadata import (query_by_name,
                                       query_by_name_and_tag,
@@ -41,13 +42,21 @@ class FileSystem:
         self.loader = loader
         self.models_path = path.joinpath("models")
 
-        self.on_delete = []
-        self.on_save = []
+        self._on_delete = signal.Signal()
+        self._on_save = signal.Signal()
 
         self.models_path.mkdir(parents=True, exist_ok=True)
         self.executor = concurrent.futures.ThreadPoolExecutor()
 
         return self
+
+    @property
+    def on_delete(self):
+        return self._on_delete
+
+    @property
+    def on_save(self):
+        return self._on_save
 
     def build_model_from_document(self, document: typing.Dict) -> model.Model:
         path = self.models_path.joinpath(document["id"])
@@ -78,6 +87,7 @@ class FileSystem:
 
             # Insert the model metadata, and update the latest model link.
             await meta.insert(m.to_dict())
+            await self.on_save.send(m)
 
             # Since the saving is happening right now, the latest model
             # will obviously be the current one.
@@ -88,6 +98,7 @@ class FileSystem:
 
             latest_query = query_by_name_and_tag(latest.name, latest.tag)
             await meta.upsert(latest.to_dict(), latest_query)
+            await self.on_save.send(latest)
 
     async def save(self, name: str, tag: str,
                    stream: io.IOBase) -> model.Model:
@@ -131,6 +142,7 @@ class FileSystem:
             m = await self.load_from_meta(name, tag)
 
             await meta.remove(query_by_id(m.id))
+            await self.on_delete.send(m.name, m.tag)
 
             # Remove the "latest" model link.
             query = query_by_name_and_tag(m.name, model.Tag.Latest.value)
@@ -144,7 +156,9 @@ class FileSystem:
             latest.tag = model.Tag.Latest.value
 
             await meta.insert(latest.to_dict())
-            return m
+            await self.on_delete.send(m.name, model.Tag.Latest.value)
+            await self.on_save.send(latest.name, latest.tag)
+        return m
 
     async def delete(self, name: str, tag: str) -> None:
         """Remove model with the given name and tag."""

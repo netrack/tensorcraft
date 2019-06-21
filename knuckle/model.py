@@ -164,6 +164,9 @@ class Cache:
         self.lock = aiorwlock.RWLock()
         self.models = {}
 
+        self.storage.on_save.append(self.save_to_cache)
+        self.storage.on_delete.append(self.delete_from_cache)
+
         if not preload:
             return self
 
@@ -193,18 +196,24 @@ class Cache:
         therefore it is beneficial to load it right after the save.
         """
         m = await self.storage.save(name, tag, model)
-        async with self.lock.writer_lock:
-            self.models[(m.name, m.tag)] = m
+        await self.save_to_cache(m)
         return m
 
+    async def save_to_cache(self, m: Model) -> None:
+        async with self.lock.writer_lock:
+            self.models[(m.name, m.tag)] = m
+
     async def delete(self, name: str, tag: str) -> None:
-        fullname = (name, tag)
         # This is totally fine to loose the data from the cache but
         # leave it in the storage (due to unexpected error).
-        async with self.lock.writer_lock:
-            if fullname in self.models:
-                del self.models[fullname]
+        await self.delete_from_cache(name, tag)
         await self.storage.delete(name, tag)
+
+    async def delete_from_cache(self, name: str, tag: str) -> None:
+        async with self.lock.writer_lock:
+            key = (name, tag)
+            if key in self.models:
+                del self.models[key]
 
     async def unsafe_load(self, name: str, tag: str) -> Model:
         """Load the model into the internal cache without acquiring the lock."""
