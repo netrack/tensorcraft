@@ -157,7 +157,7 @@ class FileSystem:
 
             await meta.insert(latest.to_dict())
             await self.on_delete.send(m.name, model.Tag.Latest.value)
-            await self.on_save.send(latest.name, latest.tag)
+            await self.on_save.send(latest)
         return m
 
     async def delete(self, name: str, tag: str) -> None:

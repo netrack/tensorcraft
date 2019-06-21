@@ -66,11 +66,14 @@ class TestServer(aiohttptest.AioHTTPTestCase):
         return s.app
 
     @asynclib.asynccontextmanager
-    async def with_model(self) -> str:
+    async def with_model(self, name: str=None, tag: str=None) -> str:
         try:
+            name = name or self.model_name
+            tag = tag or self.model_tag
+
             # Upload the serialized model to the server.
             data = asynclib.reader(self.tarpath)
-            url = "/models/{0}/{1}".format(self.model_name, self.model_tag)
+            url = "/models/{0}/{1}".format(name, tag)
 
             # Ensure the model has been uploaded.
             resp = await self.client.put(url, data=data)
@@ -94,6 +97,16 @@ class TestServer(aiohttptest.AioHTTPTestCase):
             data = dict(x=[[1.0]])
             resp = await self.client.post(url+"/predict", json=data)
             self.assertEqual(resp.status, 200)
+
+    @aiohttptest.unittest_run_loop
+    async def test_predict_latest(self):
+        async with self.with_model("nn1", "1"):
+            async with self.with_model("nn1", "2"):
+                url = "/models/nn1/latest/predict"
+                data = dict(x=[[1.0]])
+
+                resp = await self.client.post(url, json=data)
+                self.assertEqual(resp.status, 200)
 
     @aiohttptest.unittest_run_loop
     async def test_list(self):
