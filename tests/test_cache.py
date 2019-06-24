@@ -1,9 +1,9 @@
 import unittest
 import unittest.mock
 
-from tests import asynctest
 from polynome.model import Cache
 from polynome.storage.local import FileSystem
+from tests import asynctest
 
 
 class TestCache(unittest.TestCase):

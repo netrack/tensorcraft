@@ -66,6 +66,8 @@ class Predict:
             predictions = model.predict(x=body["x"])
         except (InputShapeError, json.decoder.JSONDecodeError) as e:
             raise aiohttp.web.HTTPBadRequest(text=str(e))
+        except NotFoundError as e:
+            raise aiohttp.web.HTTPNotFound(text=str(e))
 
         return aiohttp.web.json_response(dict(y=predictions))
 
