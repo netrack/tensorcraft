@@ -1,18 +1,16 @@
-import aiofiles
 import aiohttp
 import aiohttp.web
-import logging
 import pathlib
 import humanize
 import tarfile
-import typing
-
 
 import polynome.asynclib
 import polynome.errors
 
+from typing import Coroutine
 
-async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
+
+async def async_progress(path: pathlib.Path, reader: Coroutine) -> bytes:
     def progress(loaded, total, bar_len=30):
         filled_len = int(round(bar_len * loaded / total))
         empty_len = bar_len - filled_len
@@ -33,7 +31,6 @@ async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
 
     progress(loaded, total)
     print("", flush=True)
-
 
 
 class Client:

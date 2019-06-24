@@ -4,8 +4,6 @@ import io
 import logging
 import operator
 import pathlib
-import shutil
-import tinydb
 import typing
 
 import polynome.errors
@@ -16,8 +14,8 @@ from polynome import model
 from polynome import signal
 from polynome.storage import metadata
 from polynome.storage.metadata import (query_by_name,
-                                      query_by_name_and_tag,
-                                      query_by_id)
+                                       query_by_name_and_tag,
+                                       query_by_id)
 
 
 class FileSystem:
@@ -32,7 +30,7 @@ class FileSystem:
             path: pathlib.Path,
             meta: metadata.DB,
             loader: model.Loader,
-            logger: logging.Logger=polynome.logging.internal_logger):
+            logger: logging.Logger = polynome.logging.internal_logger):
 
         self = cls()
         logger.info("Using file storage backing engine")

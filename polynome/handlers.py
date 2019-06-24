@@ -2,7 +2,6 @@ import aiohttp.web
 import io
 import json
 
-from polynome.model import Model
 from polynome.errors import InputShapeError, NotFoundError, DuplicateError
 
 

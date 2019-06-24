@@ -22,15 +22,15 @@ class Server:
 
     @classmethod
     async def new(cls, data_root: str, pidfile: str,
-                  host: str=None, port: str=None,
-                  preload: bool=False,
-                  close_timeout: int=10,
-                  strategy: str=polynome.model.Strategy.No.value,
-                  logger: logging.Logger=polynome.logging.internal_logger):
+                  host: str = None, port: str = None,
+                  preload: bool = False,
+                  close_timeout: int = 10,
+                  strategy: str = polynome.model.Strategy.No.value,
+                  logger: logging.Logger = polynome.logging.internal_logger):
         """Create new instance of the server."""
 
         self = cls()
- 
+
         pidfile = pathlib.Path(pidfile)
         self.pid = pid.PidFile(piddir=pidfile.parent, pidname=pidfile.name)
 
@@ -78,7 +78,8 @@ class Server:
         return self
 
     async def _prepare_response(self, request, response):
-        response.headers["Server"] = "Polynome/{0}".format(polynome.__version__)
+        server = "Polynome/{0}".format(polynome.__version__)
+        response.headers["Server"] = server
 
     @classmethod
     def start(cls, **kwargs):

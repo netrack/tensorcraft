@@ -10,10 +10,11 @@ import tensorflow as tf
 import typing
 import uuid
 
-import polynome.errors
 import polynome.logging
 
 from datetime import datetime
+
+from polynome import errors
 
 
 class Strategy(enum.Enum):
@@ -85,7 +86,8 @@ class Model:
         return self
 
     @classmethod
-    def new(cls, name: str, tag: str, root: pathlib.Path, loader: Loader=None):
+    def new(cls, name: str, tag: str, root: pathlib.Path,
+            loader: Loader = None):
         model_id = uuid.uuid4()
         model_path = root.joinpath(model_id.hex)
         model_created_at = datetime.utcnow().timestamp()
@@ -102,7 +104,7 @@ class Model:
 
     def __init__(self, id: typing.Union[uuid.UUID, str],
                  name: str, tag: str, created_at: float,
-                 path: str=None, loader: Loader=None):
+                 path: str = None, loader: Loader = None):
         self.id = uuid.UUID(str(id))
         self.name = name
         self.tag = tag
@@ -156,8 +158,8 @@ class Cache:
     """
 
     @classmethod
-    async def new(cls, storage, preload: bool=False,
-                  logger: logging.Logger=polynome.logging.internal_logger):
+    async def new(cls, storage, preload: bool = False,
+                  logger: logging.Logger = polynome.logging.internal_logger):
         self = cls()
         self.logger = logger
         self.storage = storage
@@ -216,10 +218,10 @@ class Cache:
                 del self.models[key]
 
     async def unsafe_load(self, name: str, tag: str) -> Model:
-        """Load the model into the internal cache without acquiring the lock."""
+        """Load the model into the internal cache without acquiring a lock."""
         fullname = (name, tag)
-        if ((fullname not in self.models) or
-             not self.models[fullname].loaded()):
+        if ((fullname not in self.models) or not
+                self.models[fullname].loaded()):
             self.models[fullname] = await self.storage.load(name, tag)
         return self.models[fullname]
 

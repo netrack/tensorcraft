@@ -27,9 +27,9 @@ class App:
 
 def main():
     a = App(prog="polynome", modules=[polynome.shell.commands.Server,
-                                     polynome.shell.commands.Push,
-                                     polynome.shell.commands.Remove,
-                                     polynome.shell.commands.List])
+                                      polynome.shell.commands.Push,
+                                      polynome.shell.commands.Remove,
+                                      polynome.shell.commands.List])
 
     a.argument(["-s", "--service-url"],
                dict(help="service endpoint",
