@@ -10,8 +10,8 @@ import tensorflow as tf
 import typing
 import uuid
 
-import knuckle.errors
-import knuckle.logging
+import polynome.errors
+import polynome.logging
 
 from datetime import datetime
 
@@ -157,7 +157,7 @@ class Cache:
 
     @classmethod
     async def new(cls, storage, preload: bool=False,
-                  logger: logging.Logger=knuckle.logging.internal_logger):
+                  logger: logging.Logger=polynome.logging.internal_logger):
         self = cls()
         self.logger = logger
         self.storage = storage

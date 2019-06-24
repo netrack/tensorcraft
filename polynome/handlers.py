@@ -2,8 +2,8 @@ import aiohttp.web
 import io
 import json
 
-from knuckle.model import Model
-from knuckle.errors import InputShapeError, NotFoundError, DuplicateError
+from polynome.model import Model
+from polynome.errors import InputShapeError, NotFoundError, DuplicateError
 
 
 class Push:

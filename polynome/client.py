@@ -8,8 +8,8 @@ import tarfile
 import typing
 
 
-import knuckle.asynclib
-import knuckle.errors
+import polynome.asynclib
+import polynome.errors
 
 
 async def async_progress(path: pathlib.Path, reader: typing.Coroutine) -> bytes:
@@ -64,7 +64,7 @@ class Client:
 
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
-            reader = async_progress(path, knuckle.asynclib.reader(path))
+            reader = async_progress(path, polynome.asynclib.reader(path))
 
             await session.put(url, data=reader)
 
@@ -78,7 +78,7 @@ class Client:
             resp = await session.delete(url)
 
             if resp.status == aiohttp.web.HTTPNotFound.status_code:
-                raise knuckle.errors.NotFoundError(name, tag)
+                raise polynome.errors.NotFoundError(name, tag)
 
     async def list(self):
         """List available models on the server."""

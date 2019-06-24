@@ -2,8 +2,8 @@ import unittest
 import unittest.mock
 
 from tests import asynctest
-from knuckle.model import Cache
-from knuckle.storage.local import FileSystem
+from polynome.model import Cache
+from polynome.storage.local import FileSystem
 
 
 class TestCache(unittest.TestCase):

@@ -5,7 +5,7 @@ import uuid
 
 from typing import Union, Dict, Sequence
 
-from knuckle import asynclib
+from polynome import asynclib
 
 
 class DB:
