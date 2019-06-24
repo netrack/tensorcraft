@@ -28,7 +28,7 @@ async def extract_tar(fileobj: io.IOBase, dest: str) -> None:
         tf.extractall(dest)
 
 
-async def remove_dir(path: pathlib.Path, ignore_errors: bool=False):
+async def remove_dir(path: pathlib.Path, ignore_errors: bool = False):
     shutil.rmtree(path, ignore_errors=ignore_errors)
 
 

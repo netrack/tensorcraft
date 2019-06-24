@@ -47,11 +47,11 @@ class Command:
 
         # Search for sub-classes that represent sub-commands.
         class_dict = self.__class__.__dict__
-        filter_predicate = lambda o: isinstance(o, type)
 
-        subcommands = filter(filter_predicate, class_dict.values())
+        subcommands = filter(lambda o: isinstance(o, type),
+                             class_dict.values())
+
         subcommands = list(subcommands)
-
         if not subcommands:
             return
 
