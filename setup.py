@@ -1,4 +1,4 @@
-import knuckle
+import polynome
 import os
 import setuptools
 
@@ -11,14 +11,14 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as md:
 
 
 setuptools.setup(
-    name="knuckle",
-    version=knuckle.__version__,
+    name="polynome",
+    version=polynome.__version__,
 
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="ML serving engine",
 
-    url="https://github.com/netrack/knuckle",
+    url="https://github.com/netrack/polynome",
     author="Yasha Bubnov",
     author_email="girokompass@gmail.com",
 
@@ -44,6 +44,6 @@ setuptools.setup(
     ],
 
     entry_points={
-        "console_scripts": ["knuckle = knuckle.shell.main:main"],
+        "console_scripts": ["polynome = polynome.shell.main:main"],
     },
 )

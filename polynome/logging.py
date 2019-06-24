@@ -32,6 +32,6 @@ internal_format = "{asctime} {levelname} - {message}"
 internal_handler = logging.StreamHandler()
 internal_handler.setFormatter(logging.Formatter(internal_format, style="{"))
 
-internal_logger = logging.getLogger("knuckle")
+internal_logger = logging.getLogger("polynome")
 internal_logger.addHandler(internal_handler)
 internal_logger.setLevel(logging.DEBUG)

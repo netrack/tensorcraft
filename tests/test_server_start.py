@@ -3,7 +3,7 @@ import aiohttp.web
 import pathlib
 import tempfile
 
-from knuckle.server import Server
+from polynome.server import Server
 
 
 class TestServerStart(aiohttptest.AioHTTPTestCase):
@@ -19,7 +19,7 @@ class TestServerStart(aiohttptest.AioHTTPTestCase):
         data_root = pathlib.Path(self.workdir.name).joinpath("non/existing")
 
         server = await Server.new(data_root=data_root,
-                                  pidfile=data_root.joinpath("knuckle.pid"))
+                                  pidfile=data_root.joinpath("polynome.pid"))
         return server.app
 
     @aiohttptest.unittest_run_loop

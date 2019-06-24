@@ -8,14 +8,14 @@ import shutil
 import tinydb
 import typing
 
-import knuckle.errors
-import knuckle.logging
+import polynome.errors
+import polynome.logging
 
-from knuckle import asynclib
-from knuckle import model
-from knuckle import signal
-from knuckle.storage import metadata
-from knuckle.storage.metadata import (query_by_name,
+from polynome import asynclib
+from polynome import model
+from polynome import signal
+from polynome.storage import metadata
+from polynome.storage.metadata import (query_by_name,
                                       query_by_name_and_tag,
                                       query_by_id)
 
@@ -32,7 +32,7 @@ class FileSystem:
             path: pathlib.Path,
             meta: metadata.DB,
             loader: model.Loader,
-            logger: logging.Logger=knuckle.logging.internal_logger):
+            logger: logging.Logger=polynome.logging.internal_logger):
 
         self = cls()
         logger.info("Using file storage backing engine")
@@ -83,7 +83,7 @@ class FileSystem:
             if await meta.get(query_by_name_and_tag(m.name, m.tag)):
                 self.logger.debug("Model %s already exists", m)
 
-                raise knuckle.errors.DuplicateError(m.name, m.tag)
+                raise polynome.errors.DuplicateError(m.name, m.tag)
 
             # Insert the model metadata, and update the latest model link.
             await meta.insert(m.to_dict())
@@ -174,12 +174,12 @@ class FileSystem:
 
             self.logger.info("Removed model %s:%s", name, tag)
         except FileNotFoundError:
-            raise knuckle.errors.NotFoundError(name, tag)
+            raise polynome.errors.NotFoundError(name, tag)
 
     async def load_from_meta(self, name: str, tag: str):
         document = await self.meta.get(query_by_name_and_tag(name, tag))
         if not document:
-            raise knuckle.errors.NotFoundError(name, tag)
+            raise polynome.errors.NotFoundError(name, tag)
         return self.build_model_from_document(document)
 
     async def load(self, name: str, tag: str) -> model.Model:

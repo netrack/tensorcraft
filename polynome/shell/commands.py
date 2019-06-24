@@ -3,10 +3,10 @@ import enum
 import importlib
 import pathlib
 
-import knuckle.client
-import knuckle.errors
+import polynome.client
+import polynome.errors
 
-from knuckle import asynclib
+from polynome import asynclib
 
 
 class ExitStatus(enum.Enum):
@@ -84,11 +84,11 @@ class Server(Command):
         (["--data-root"],
          dict(metavar="PATH",
               help="root directory of persistent state",
-              default=".var/lib/knuckle")),
+              default=".var/lib/polynome")),
         (["--pidfile"],
          dict(metavar="PIDFILE",
               help="path to use for daemon pid file",
-              default=".var/run/knuckle.pid")),
+              default=".var/run/polynome.pid")),
         (["--strategy"],
          dict(metavar="STRATEGY",
               choices=["mirrored", "multi_worker_mirrored", "none"],
@@ -100,7 +100,7 @@ class Server(Command):
               help="preload all models into the memory before start"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        server = importlib.import_module("knuckle.server")
+        server = importlib.import_module("polynome.server")
         server.Server.start(**args.__dict__)
         return ExitStatus.Success
 
@@ -129,7 +129,7 @@ class Push(Command):
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         print("loading model {0}:{1}".format(args.name, args.tag))
-        client = knuckle.client.Client(service_url=args.service_url)
+        client = polynome.client.Client(service_url=args.service_url)
 
         path = pathlib.Path(args.path)
         task = client.push(args.name, args.tag, path)
@@ -163,12 +163,12 @@ class Remove(Command):
               help="model tag"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = knuckle.client.Client(service_url=args.service_url)
+        client = polynome.client.Client(service_url=args.service_url)
         task = client.remove(args.name, args.tag)
 
         try:
             asynclib.run(task)
-        except knuckle.errors.NotFoundError as e:
+        except polynome.errors.NotFoundError as e:
             if not args.quiet:
                 print("{0}.".format(e))
                 return ExitStatus.Failure
@@ -188,7 +188,7 @@ class List(Command):
     arguments = []
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = knuckle.client.Client(service_url=args.service_url)
+        client = polynome.client.Client(service_url=args.service_url)
         task = client.list()
 
         try:

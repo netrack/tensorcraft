@@ -6,15 +6,15 @@ import logging
 import pathlib
 import pid
 
-import knuckle
-import knuckle.logging
-import knuckle.model
-import knuckle.storage.local
+import polynome
+import polynome.logging
+import polynome.model
+import polynome.storage.local
 
 from aiojobs.aiohttp import atomic, setup
 
-from knuckle import handlers
-from knuckle.storage import metadata
+from polynome import handlers
+from polynome.storage import metadata
 
 
 class Server:
@@ -25,8 +25,8 @@ class Server:
                   host: str=None, port: str=None,
                   preload: bool=False,
                   close_timeout: int=10,
-                  strategy: str=knuckle.model.Strategy.No.value,
-                  logger: logging.Logger=knuckle.logging.internal_logger):
+                  strategy: str=polynome.model.Strategy.No.value,
+                  logger: logging.Logger=polynome.logging.internal_logger):
         """Create new instance of the server."""
 
         self = cls()
@@ -40,15 +40,15 @@ class Server:
 
         # TODO: use different execution strategies for models and
         # fallback to the server-default execution strategy.
-        loader = knuckle.model.Loader(strategy=strategy, logger=logger)
+        loader = polynome.model.Loader(strategy=strategy, logger=logger)
 
         # A metadata storage with models details.
         meta = metadata.DB.new(path=data_root)
 
-        storage = knuckle.storage.local.FileSystem.new(
+        storage = polynome.storage.local.FileSystem.new(
             path=data_root, meta=meta, loader=loader)
 
-        models = await knuckle.model.Cache.new(
+        models = await polynome.model.Cache.new(
             storage=storage, preload=preload)
 
         self.app = aiohttp.web.Application()
@@ -78,7 +78,7 @@ class Server:
         return self
 
     async def _prepare_response(self, request, response):
-        response.headers["Server"] = "Knuckle/{0}".format(knuckle.__version__)
+        response.headers["Server"] = "Polynome/{0}".format(polynome.__version__)
 
     @classmethod
     def start(cls, **kwargs):

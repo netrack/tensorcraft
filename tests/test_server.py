@@ -9,8 +9,8 @@ import tensorflow as tf
 import unittest
 import uuid
 
-from knuckle import asynclib
-from knuckle import server
+from polynome import asynclib
+from polynome import server
 from tests import asynctest
 
 
