@@ -2,6 +2,7 @@ import aiohttp.test_utils as aiohttptest
 import aiohttp.web
 import pathlib
 import tempfile
+import unittest
 
 from polynome.server import Server
 
@@ -29,4 +30,4 @@ class TestServerStart(aiohttptest.AioHTTPTestCase):
 
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

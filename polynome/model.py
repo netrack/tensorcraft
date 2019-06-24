@@ -20,7 +20,7 @@ from polynome import errors
 class Strategy(enum.Enum):
     """Strategy is an execution strategy of the model."""
 
-    No = "none"
+    No = "no"
     Mirrored = "mirrored"
     MultiWorkerMirrored = "multi_worker_mirrored"
 
@@ -31,7 +31,7 @@ class Tag(enum.Enum):
     Latest = "latest"
 
 
-class NoneStrategy:
+class NoStrategy:
     """A strategy that does nothing additional to the loaded model.
 
     This strategy used when the computation strategy is not specified.
@@ -45,13 +45,14 @@ class Loader:
     """Load the model with the specific computation strategy."""
 
     strategies = {
-        Strategy.No: NoneStrategy,
+        Strategy.No: NoStrategy,
         Strategy.Mirrored: tf.distribute.MirroredStrategy,
         Strategy.MultiWorkerMirrored: (
             tf.distribute.experimental.MultiWorkerMirroredStrategy),
     }
 
-    def __init__(self, strategy: str, logger: logging.Logger):
+    def __init__(self, strategy: str,
+                 logger: logging.Logger = polynome.logging.internal_logger):
         if Strategy(strategy) not in self.strategies:
             raise ValueError("unknown strategy {0}".format(strategy))
 
@@ -117,6 +118,7 @@ class Model:
     def copy(self):
         return copy.copy(self)
 
+    @property
     def loaded(self):
         """True when the model is loaded and False otherwise."""
         return self.model is not None
@@ -221,7 +223,7 @@ class Cache:
         """Load the model into the internal cache without acquiring a lock."""
         fullname = (name, tag)
         if ((fullname not in self.models) or not
-                self.models[fullname].loaded()):
+                self.models[fullname].loaded):
             self.models[fullname] = await self.storage.load(name, tag)
         return self.models[fullname]
 

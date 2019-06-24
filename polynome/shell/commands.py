@@ -91,7 +91,7 @@ class Server(Command):
               default=".var/run/polynome.pid")),
         (["--strategy"],
          dict(metavar="STRATEGY",
-              choices=["mirrored", "multi_worker_mirrored", "none"],
+              choices=["mirrored", "multi_worker_mirrored", "no"],
               default="mirrored",
               help="model execution strategy")),
         (["--preload"],
