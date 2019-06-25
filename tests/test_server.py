@@ -7,6 +7,7 @@ import unittest
 from polynome import asynclib
 from polynome import server
 from tests import kerastest
+from tests import stringtest
 
 
 class TestServer(aiohttptest.AioHTTPTestCase):
@@ -31,7 +32,10 @@ class TestServer(aiohttptest.AioHTTPTestCase):
         return s.app
 
     @asynclib.asynccontextmanager
-    async def pushed_model(self, name: str = "nn", tag: str = "tt") -> str:
+    async def pushed_model(self, name: str = None, tag: str = None) -> str:
+        name = name or stringtest.random_string()
+        tag = tag or stringtest.random_string()
+
         async with kerastest.crossentropy_model_tar(name, tag) as tarpath:
             try:
                 # Upload the serialized model to the server.
@@ -42,7 +46,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
                 resp = await self.client.put(url, data=data)
                 self.assertEqual(resp.status, 201)
 
-                yield kerastest.Model(tarpath, url)
+                yield kerastest.Model(name, tag, tarpath, url)
             finally:
                 await self.client.delete(url)
 
@@ -69,9 +73,9 @@ class TestServer(aiohttptest.AioHTTPTestCase):
 
     @aiohttptest.unittest_run_loop
     async def test_predict_latest(self):
-        async with self.pushed_model("nn1", "1"):
-            async with self.pushed_model("nn1", "2"):
-                url = "/models/nn1/latest/predict"
+        async with self.pushed_model() as m1:
+            async with self.pushed_model(m1.name) as m2:
+                url = "/models/{0}/latest/predict".format(m2.name)
                 data = dict(x=[[1.0]])
 
                 resp = await self.client.post(url, json=data)
@@ -79,7 +83,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
 
     @aiohttptest.unittest_run_loop
     async def test_list(self):
-        async with self.pushed_model("n1", "t1"):
+        async with self.pushed_model() as m:
             resp = await self.client.get("/models")
             self.assertEqual(resp.status, 200)
 
@@ -90,7 +94,7 @@ class TestServer(aiohttptest.AioHTTPTestCase):
             data = data[0]
             data = dict(name=data.get("name"), tag=data.get("tag"))
 
-            self.assertEqual(data, dict(name="n1", tag="t1"))
+            self.assertEqual(data, dict(name=m.name, tag=m.tag))
 
 
 if __name__ == "__main__":

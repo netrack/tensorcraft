@@ -8,9 +8,11 @@ import uuid
 from collections import namedtuple
 
 from polynome import asynclib
+from polynome import model
+from tests import stringtest
 
 
-Model = namedtuple("Model", ["tarpath", "url"])
+Model = namedtuple("Model", ["name", "tag", "tarpath", "url"])
 
 
 @asynclib.asynccontextmanager
@@ -38,3 +40,8 @@ async def crossentropy_model_tar(name: str, tag: str):
             tar.add(str(dest), arcname="")
 
         yield tarpath
+
+def new_model():
+    return model.Model.new(name=stringtest.random_string(),
+                           tag=stringtest.random_string(),
+                           root=pathlib.Path("/"))
