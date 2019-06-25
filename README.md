@@ -11,7 +11,7 @@ This server solves such problems as:
 * Warehousing of models.
 * Enabling CI/CD.
 
-# Installation
+## Installation
 
 Install from pypi repository.
 ```bash
