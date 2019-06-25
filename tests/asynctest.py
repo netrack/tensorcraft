@@ -4,7 +4,7 @@ import unittest
 import unittest.mock
 
 
-class MagicMock(unittest.mock.MagicMock):
+class AsyncMagicMock(unittest.mock.MagicMock):
 
     async def __call__(self, *args, **kwargs):
         return super().__call__(*args, **kwargs)
@@ -46,10 +46,7 @@ class AsyncTestCase(unittest.TestCase):
         self.__loop.run_until_complete(self.setUpAsync())
 
     def tearDown(self):
-        try:
-            self.__loop.run_until_complete(self.tearDownAsync())
-        finally:
-            self.__loop.close()
+        self.__loop.run_until_complete(self.tearDownAsync())
 
     async def setUpAsync(self) -> None:
         pass

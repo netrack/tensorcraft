@@ -119,6 +119,10 @@ class Model:
         return copy.copy(self)
 
     @property
+    def key(self):
+        return (self.name, self.tag)
+
+    @property
     def loaded(self):
         """True when the model is loaded and False otherwise."""
         return self.model is not None
@@ -187,10 +191,9 @@ class Cache:
         not loaded. So before using them, they must be loaded.
         """
         async with self.lock.reader_lock:
-            self.models = {}
-
             async for m in self.storage.all():
-                self.models[(m.name, m.tag)] = m
+                if m.key not in self.models:
+                    self.models[m.key] = m
                 yield m
 
     async def save(self, name: str, tag: str, model: io.IOBase) -> Model:
@@ -221,11 +224,10 @@ class Cache:
 
     async def unsafe_load(self, name: str, tag: str) -> Model:
         """Load the model into the internal cache without acquiring a lock."""
-        fullname = (name, tag)
-        if ((fullname not in self.models) or not
-                self.models[fullname].loaded):
-            self.models[fullname] = await self.storage.load(name, tag)
-        return self.models[fullname]
+        key = (name, tag)
+        if ((key not in self.models) or not self.models[key].loaded):
+            self.models[key] = await self.storage.load(name, tag)
+        return self.models[key]
 
     async def load(self, name: str, tag: str) -> Model:
         # Load the model from the parent storage when

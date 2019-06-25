@@ -16,7 +16,7 @@ setuptools.setup(
 
     long_description=long_description,
     long_description_content_type="text/markdown",
-    description="ML serving engine",
+    description="Polynome is a server for Keras models.",
 
     url="https://github.com/netrack/polynome",
     author="Yasha Bubnov",
