@@ -21,6 +21,7 @@ multidict==4.5.2
 numpy==1.16.4
 pid==2.2.3
 protobuf==3.8.0
+semver==2.8.1
 six==1.12.0
 tb-nightly==1.14.0a20190603
 tensorflow==2.0.0b0
