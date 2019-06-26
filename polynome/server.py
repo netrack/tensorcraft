@@ -11,10 +11,12 @@ import polynome.logging
 import polynome.model
 import polynome.storage.local
 
-from aiojobs.aiohttp import atomic, setup
+from aiojobs.aiohttp import setup
+from functools import partial
 
 from polynome import handlers
 from polynome.storage import metadata
+from polynome.middleware import route_to
 
 
 class Server:
@@ -58,19 +60,21 @@ class Server:
         self.app.on_shutdown.append(cls.app_callback(meta.close))
         self.app.on_shutdown.append(cls.app_callback(self.pid.close))
 
+        route = partial(route_to, api_version=polynome.__apiversion__)
+
         self.app.add_routes([
             aiohttp.web.put(
                 "/models/{name}/{tag}",
-                atomic(handlers.Push(models))),
+                route(handlers.Push(models))),
             aiohttp.web.delete(
                 "/models/{name}/{tag}",
-                atomic(handlers.Remove(models))),
+                route(handlers.Remove(models))),
             aiohttp.web.post(
                 "/models/{name}/{tag}/predict",
-                atomic(handlers.Predict(models))),
+                route(handlers.Predict(models))),
 
-            aiohttp.web.get("/models", atomic(handlers.List(models))),
-            aiohttp.web.get("/status", atomic(handlers.Status()))])
+            aiohttp.web.get("/models", route(handlers.List(models))),
+            aiohttp.web.get("/status", route(handlers.Status()))])
 
         setup(self.app)
         logger.info("Server initialization completed")
@@ -104,7 +108,3 @@ class Server:
             if asyncio.iscoroutine(coroutine):
                 await coroutine
         return on_signal
-
-
-if __name__ == "__main__":
-    Server().serve()
