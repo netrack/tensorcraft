@@ -4,6 +4,7 @@ import pathlib
 import humanize
 import tarfile
 
+import polynome
 import polynome.asynclib
 import polynome.errors
 
@@ -45,6 +46,8 @@ class Client:
         service_url -- service endpoint
     """
 
+    default_headers = {"Accept-Version": polynome.__apiversion__}
+
     def __init__(self, service_url: str):
         self.service_url = service_url
 
@@ -63,7 +66,7 @@ class Client:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
             reader = async_progress(path, polynome.asynclib.reader(path))
 
-            await session.put(url, data=reader)
+            await session.put(url, data=reader, headers=self.default_headers)
 
     async def remove(self, name: str, tag: str):
         """Remove the model from the server.
@@ -72,7 +75,7 @@ class Client:
         """
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
-            resp = await session.delete(url)
+            resp = await session.delete(url, headers=self.default_headers)
 
             if resp.status == aiohttp.web.HTTPNotFound.status_code:
                 raise polynome.errors.NotFoundError(name, tag)
@@ -82,5 +85,5 @@ class Client:
         async with aiohttp.ClientSession() as session:
             url = self.service_url + "/models"
 
-            async with session.get(url) as resp:
+            async with session.get(url, headers=self.default_headers) as resp:
                 return await resp.json()
