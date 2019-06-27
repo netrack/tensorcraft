@@ -2,15 +2,15 @@ import argparse
 import sys
 
 import polynome
-import polynome.shell.commands
+
+from polynome.shell import commands
 
 
 class App:
 
     def __init__(self, prog, modules):
         self.parser = argparse.ArgumentParser(
-            prog=prog,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+            prog=prog, formatter_class=commands.Formatter)
 
         self.parser.set_defaults(func=lambda *x: self.parser.print_help())
         subparsers = self.parser.add_subparsers()
@@ -26,10 +26,10 @@ class App:
 
 
 def main():
-    a = App(prog="polynome", modules=[polynome.shell.commands.Server,
-                                      polynome.shell.commands.Push,
-                                      polynome.shell.commands.Remove,
-                                      polynome.shell.commands.List])
+    a = App(prog="polynome", modules=[commands.Server,
+                                      commands.Push,
+                                      commands.Remove,
+                                      commands.List])
 
     a.argument(["-s", "--service-url"],
                dict(help="service endpoint",

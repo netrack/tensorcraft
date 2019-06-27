@@ -14,6 +14,19 @@ class ExitStatus(enum.Enum):
     Failure = 1
 
 
+class Formatter(argparse.ArgumentDefaultsHelpFormatter):
+
+    def __init__(self,
+                 prog,
+                 indent_increment=2,
+                 max_help_position=48,
+                 width=120):
+        super().__init__(prog,
+                         indent_increment,
+                         max_help_position,
+                         width)
+
+
 class Command:
     """Shell sub-command."""
 
@@ -22,6 +35,7 @@ class Command:
         "aliases",
         "arguments",
         "help",
+        "description",
     ]
 
     def __init__(self, subparsers):
@@ -37,7 +51,8 @@ class Command:
             name=self.__meta__.name,
             help=self.__meta__.help,
             aliases=(self.__meta__.aliases or []),
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+            description=self.__meta__.description,
+            formatter_class=Formatter)
 
         for args, kwargs in self.__meta__.arguments or []:
             self.subparser.add_argument(*args, **kwargs)
@@ -72,6 +87,8 @@ class Server(Command):
     aliases = ["s"]
     help = "run server"
 
+    description = "Start serving models."
+
     arguments = [
         (["-H", "--host"],
          dict(metavar="HOST",
@@ -97,7 +114,27 @@ class Server(Command):
         (["--preload"],
          dict(action="store_true",
               default=False,
-              help="preload all models into the memory before start"))]
+              help="preload all models into the memory before start")),
+        (["--tls"],
+         dict(action="store_true",
+              default=False,
+              help="use TLS")),
+        (["--tlsverify"],
+         dict(action="store_true",
+              default=False,
+              help="use TLS and verify remove")),
+        (["--tlscacert"],
+         dict(metavar="TLS_CACERT",
+              default=pathlib.Path.home().joinpath(".polynome/cacert.pem"),
+              help="trust certs signed only by this CA")),
+        (["--tlscert"],
+         dict(metavar="TLS_CERT",
+              default=pathlib.Path.home().joinpath(".polynome/cert.pem"),
+              help="path to TLS certificate file")),
+        (["--tlskey"],
+         dict(metavar="TLS_KEY",
+              default=pathlib.Path.home().joinpath(".polynome/key.pem"),
+              help="path to TLS key fine"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         server = importlib.import_module("polynome.server")
@@ -112,19 +149,25 @@ class Push(Command):
     aliases = ["p"]
     help = "push model"
 
+    description = "Push a model image to the repository."
+
     arguments = [
         (["-n", "--name"],
          dict(metavar="NAME",
               type=str,
+              required=True,
+              default=argparse.SUPPRESS,
               help="model name")),
         (["-t", "--tag"],
          dict(metavar="TAG",
               type=str,
-              default="latest",
+              required=True,
+              default=argparse.SUPPRESS,
               help="model tag")),
         (["path"],
          dict(metavar="PATH",
               type=str,
+              default=argparse.SUPPRESS,
               help="model location"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
@@ -148,6 +191,8 @@ class Remove(Command):
     name = "remove"
     aliases = ["rm"]
     help = "remove model"
+
+    description = "Remove a model from the repository."
 
     arguments = [
         (["-n", "--name"],
@@ -184,6 +229,8 @@ class List(Command):
     name = "list"
     aliases = ["ls"]
     help = "list models"
+
+    description = "List available models."
 
     arguments = []
 
