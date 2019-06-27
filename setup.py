@@ -30,6 +30,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["tests"]),
     tests_require=[
         "pytest-aiohttp>=0.3.0",
+        "cryptography>=2.7",
     ],
     install_requires=[
         "aiojobs>=0.2.2",

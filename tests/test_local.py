@@ -6,7 +6,6 @@ import unittest
 import unittest.mock
 
 from polynome import model
-from polynome import asynclib
 from polynome.storage.local import FileSystem
 from polynome.storage import metadata
 from tests import asynctest

@@ -9,7 +9,7 @@ from collections import namedtuple
 
 from polynome import asynclib
 from polynome import model
-from tests import stringtest
+from tests import cryptotest
 
 
 Model = namedtuple("Model", ["name", "tag", "tarpath", "url"])
@@ -41,7 +41,8 @@ async def crossentropy_model_tar(name: str, tag: str):
 
         yield tarpath
 
+
 def new_model():
-    return model.Model.new(name=stringtest.random_string(),
-                           tag=stringtest.random_string(),
+    return model.Model.new(name=cryptotest.random_string(),
+                           tag=cryptotest.random_string(),
                            root=pathlib.Path("/"))

@@ -3,12 +3,16 @@ import aiohttp.web
 import pathlib
 import humanize
 import tarfile
+import ssl
 
 import polynome
 import polynome.asynclib
 import polynome.errors
 
-from typing import Coroutine
+from polynome import arglib
+from polynome import tlslib
+
+from typing import Coroutine, Union
 
 
 async def async_progress(path: pathlib.Path, reader: Coroutine) -> bytes:
@@ -46,10 +50,22 @@ class Client:
         service_url -- service endpoint
     """
 
-    default_headers = {"Accept-Version": polynome.__apiversion__}
+    default_headers = {"Accept-Version":
+                       ">={0}".format(polynome.__apiversion__)}
 
-    def __init__(self, service_url: str):
+    def __init__(self, service_url: str,
+                 ssl_context: Union[ssl.SSLContext, None] = None):
         self.service_url = service_url
+        self.ssl_context = ssl_context
+
+    @classmethod
+    def new(cls, **kwargs):
+        ssl_args = arglib.filter_callable_arguments(
+            tlslib.create_client_ssl_context, **kwargs)
+
+        ssl_context = tlslib.create_client_ssl_context(**ssl_args)
+        self = cls(kwargs.get("service_url"), ssl_context)
+        return self
 
     async def push(self, name: str, tag: str, path: pathlib.Path):
         """Push the model to the server.
@@ -66,7 +82,8 @@ class Client:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
             reader = async_progress(path, polynome.asynclib.reader(path))
 
-            await session.put(url, data=reader, headers=self.default_headers)
+            await session.put(url, data=reader, headers=self.default_headers,
+                              ssl_context=self.ssl_context)
 
     async def remove(self, name: str, tag: str):
         """Remove the model from the server.
@@ -75,7 +92,8 @@ class Client:
         """
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
-            resp = await session.delete(url, headers=self.default_headers)
+            resp = await session.delete(url, headers=self.default_headers,
+                                        ssl_context=self.ssl_context)
 
             if resp.status == aiohttp.web.HTTPNotFound.status_code:
                 raise polynome.errors.NotFoundError(name, tag)
@@ -85,5 +103,6 @@ class Client:
         async with aiohttp.ClientSession() as session:
             url = self.service_url + "/models"
 
-            async with session.get(url, headers=self.default_headers) as resp:
+            async with session.get(url, headers=self.default_headers,
+                                   ssl_context=self.ssl_context) as resp:
                 return await resp.json()

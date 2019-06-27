@@ -3,15 +3,26 @@ import enum
 import importlib
 import pathlib
 
-import polynome.client
 import polynome.errors
 
 from polynome import asynclib
+from polynome.client import Client
 
 
 class ExitStatus(enum.Enum):
     Success = 0
     Failure = 1
+
+
+class Formatter(argparse.ArgumentDefaultsHelpFormatter):
+    """Format arguments with default values for wide screens.
+
+    Print the usage of the commands to the 140 character terminals.
+    """
+
+    def __init__(self, prog, indent_increment=2, max_help_position=48,
+                 width=140):
+        super().__init__(prog, indent_increment, max_help_position, width)
 
 
 class Command:
@@ -22,6 +33,7 @@ class Command:
         "aliases",
         "arguments",
         "help",
+        "description",
     ]
 
     def __init__(self, subparsers):
@@ -37,7 +49,8 @@ class Command:
             name=self.__meta__.name,
             help=self.__meta__.help,
             aliases=(self.__meta__.aliases or []),
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+            description=self.__meta__.description,
+            formatter_class=Formatter)
 
         for args, kwargs in self.__meta__.arguments or []:
             self.subparser.add_argument(*args, **kwargs)
@@ -72,6 +85,8 @@ class Server(Command):
     aliases = ["s"]
     help = "run server"
 
+    description = "Start serving models."
+
     arguments = [
         (["-H", "--host"],
          dict(metavar="HOST",
@@ -100,8 +115,11 @@ class Server(Command):
               help="preload all models into the memory before start"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        server = importlib.import_module("polynome.server")
-        server.Server.start(**args.__dict__)
+        try:
+            server = importlib.import_module("polynome.server")
+            server.Server.start(**args.__dict__)
+        except FileNotFoundError as e:
+            print("Failed to start server. {0}.".format(e))
         return ExitStatus.Success
 
 
@@ -112,27 +130,32 @@ class Push(Command):
     aliases = ["p"]
     help = "push model"
 
+    description = "Push a model image to the repository."
+
     arguments = [
         (["-n", "--name"],
          dict(metavar="NAME",
               type=str,
+              required=True,
+              default=argparse.SUPPRESS,
               help="model name")),
         (["-t", "--tag"],
          dict(metavar="TAG",
               type=str,
-              default="latest",
+              required=True,
+              default=argparse.SUPPRESS,
               help="model tag")),
         (["path"],
          dict(metavar="PATH",
-              type=str,
+              type=pathlib.Path,
+              default=argparse.SUPPRESS,
               help="model location"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         print("loading model {0}:{1}".format(args.name, args.tag))
-        client = polynome.client.Client(service_url=args.service_url)
 
-        path = pathlib.Path(args.path)
-        task = client.push(args.name, args.tag, path)
+        client = Client.new(**args.__dict__)
+        task = client.push(args.name, args.tag, args.path)
 
         try:
             asynclib.run(task)
@@ -149,6 +172,8 @@ class Remove(Command):
     aliases = ["rm"]
     help = "remove model"
 
+    description = "Remove a model from the repository."
+
     arguments = [
         (["-n", "--name"],
          dict(metavar="NAME",
@@ -163,7 +188,7 @@ class Remove(Command):
               help="model tag"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = polynome.client.Client(service_url=args.service_url)
+        client = Client.new(**args.__dict__)
         task = client.remove(args.name, args.tag)
 
         try:
@@ -185,10 +210,12 @@ class List(Command):
     aliases = ["ls"]
     help = "list models"
 
+    description = "List available models."
+
     arguments = []
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = polynome.client.Client(service_url=args.service_url)
+        client = Client.new(**args.__dict__)
         task = client.list()
 
         try:
