@@ -1,7 +1,6 @@
 import aiohttp
 import aiohttp.web
 import asyncio
-import inspect
 import logging
 import pathlib
 import pid
@@ -116,16 +115,15 @@ class Server:
 
         if not tlsverify:
             return ssl_context
-                
 
         if not pathlib.Path(tlscacert).exists():
             raise FileNotFoundError((
                 "could not read certification authority certificate"
                 "'{0}', no such file").format(tlscacert))
 
-            ssl_context.verify_mode = ssl.CERT_REQUIRED
-            ssl_context.load_verify_locations(cafile=tlscacert)
-            logger.info("using peer certificates validation")
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+        ssl_context.load_verify_locations(cafile=tlscacert)
+        logger.info("using peer certificates validation")
 
         return ssl_context
 

@@ -1,8 +1,7 @@
-import pathlib
 import unittest
 import unittest.mock
 
-from polynome.model import Cache, Model
+from polynome.model import Cache
 from polynome.storage.local import FileSystem
 from tests import asynctest
 from tests import kerastest
@@ -40,7 +39,7 @@ class TestCache(asynctest.AsyncTestCase):
 
         cache = await Cache.new(storage=self.storage)
         m2 = await cache.save(m1.name, m1.tag, None)
-    
+
         self.storage.save.assert_called()
         self.assertEqual(m1, m2)
         self.assertIn(m1.key, cache.models)
@@ -50,9 +49,9 @@ class TestCache(asynctest.AsyncTestCase):
         m = kerastest.new_model()
 
         self.storage.delete = asynctest.AsyncMagicMock()
-        
+
         cache = await Cache.new(storage=self.storage)
-        cache.models[m.key]  = m
+        cache.models[m.key] = m
 
         await cache.delete(m.name, m.tag)
 
@@ -100,6 +99,7 @@ class TestCache(asynctest.AsyncTestCase):
         self.assertIn(m1.key, cache.models)
 
         self.assertEqual(m1, m2)
+
 
 if __name__ == "__main__":
     unittest.main()

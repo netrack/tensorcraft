@@ -137,8 +137,11 @@ class Server(Command):
               help="path to TLS key fine"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        server = importlib.import_module("polynome.server")
-        server.Server.start(**args.__dict__)
+        try:
+            server = importlib.import_module("polynome.server")
+            server.Server.start(**args.__dict__)
+        except FileNotFoundError as e:
+            print(e)
         return ExitStatus.Success
 
 

@@ -33,14 +33,13 @@ class TestServerExtra(aiohttptest.AioHTTPTestCase):
         headers = {"Accept-Version": ">=0.0.0"}
         resp = await self.client.get("/status", headers=headers)
         self.assertEqual(resp.status, 200)
-            
+
     @aiohttptest.unittest_run_loop
     async def test_accept_version_not_accepted(self):
         headers = {"Accept-Version": "==0.0.0"}
         resp = await self.client.get("/status", headers=headers)
 
         self.assertEqual(resp.status, 406)
-
 
 
 if __name__ == "__main__":

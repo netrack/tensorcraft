@@ -41,6 +41,7 @@ async def crossentropy_model_tar(name: str, tag: str):
 
         yield tarpath
 
+
 def new_model():
     return model.Model.new(name=stringtest.random_string(),
                            tag=stringtest.random_string(),
