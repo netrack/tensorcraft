@@ -11,7 +11,7 @@ def create_server_ssl_context(tls: bool = False,
                               tlskey: str = None,
                               tlscacert: str = None,
                               logger: logging.Logger = internal_logger):
-    """Create SSL context with the given TLS parameters."""
+    """Create server SSL context with the given TLS parameters."""
     if not tls and not tlsverify:
         return None
 
@@ -41,6 +41,7 @@ def create_client_ssl_context(tls: bool = False,
                               tlscert: str = None,
                               tlskey: str = None,
                               tlscacert: str = None):
+    """Create client SSL context with the given TLS parameters."""
     if not tls and not tlsverify:
         return None
 

@@ -7,7 +7,6 @@ import unittest
 from polynome import asynclib
 from polynome import server
 from tests import kerastest
-from tests import stringtest
 
 
 class TestServer(aiohttptest.AioHTTPTestCase):
@@ -33,20 +32,19 @@ class TestServer(aiohttptest.AioHTTPTestCase):
 
     @asynclib.asynccontextmanager
     async def pushed_model(self, name: str = None, tag: str = None) -> str:
-        name = name or stringtest.random_string()
-        tag = tag or stringtest.random_string()
+        m = kerastest.new_model()
 
-        async with kerastest.crossentropy_model_tar(name, tag) as tarpath:
+        async with kerastest.crossentropy_model_tar(m.name, m.tag) as tarpath:
             try:
                 # Upload the serialized model to the server.
                 data = asynclib.reader(tarpath)
-                url = "/models/{0}/{1}".format(name, tag)
+                url = "/models/{0}/{1}".format(m.name, m.tag)
 
                 # Ensure the model has been uploaded.
                 resp = await self.client.put(url, data=data)
                 self.assertEqual(resp.status, 201)
 
-                yield kerastest.Model(name, tag, tarpath, url)
+                yield kerastest.Model(m.name, m.tag, tarpath, url)
             finally:
                 await self.client.delete(url)
 
