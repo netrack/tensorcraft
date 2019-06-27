@@ -5,7 +5,6 @@ import logging
 import pathlib
 import pid
 import semver
-import ssl
 
 import polynome
 import polynome.model
@@ -17,6 +16,7 @@ from typing import Awaitable
 
 from polynome import arglib
 from polynome import handlers
+from polynome import tlslib
 from polynome.logging import internal_logger
 from polynome.storage import metadata
 
@@ -88,46 +88,6 @@ class Server:
         response.headers["Server"] = server
 
     @classmethod
-    def create_ssl_context(cls,
-                           tls: bool = False,
-                           tlsverify: bool = False,
-                           tlscert: str = None,
-                           tlskey: str = None,
-                           tlscacert: str = None,
-                           logger: logging.Logger = internal_logger):
-        """Create SSL context with the given TLS configuration."""
-        if not tls and not tlsverify:
-            return None
-
-        if not pathlib.Path(tlscert).exists():
-            raise FileNotFoundError((
-                "could not read certificate '{0}', no such file"
-                ).format(tlscert))
-        if not pathlib.Path(tlskey).exists():
-            raise FileNotFoundError((
-                "could not read key '{0}', no such file").format(tlskey))
-
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(tlscert, tlskey)
-        ssl_context.verify_mode = ssl.CERT_NONE
-
-        logger.info("Using transport layer security")
-
-        if not tlsverify:
-            return ssl_context
-
-        if not pathlib.Path(tlscacert).exists():
-            raise FileNotFoundError((
-                "could not read certification authority certificate"
-                "'{0}', no such file").format(tlscacert))
-
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-        ssl_context.load_verify_locations(cafile=tlscacert)
-        logger.info("using peer certificates validation")
-
-        return ssl_context
-
-    @classmethod
     def start(cls, **kwargs):
         """Start serving the models.
 
@@ -140,9 +100,8 @@ class Server:
             return s.app
 
         ssl_args = arglib.filter_callable_arguments(
-            cls.create_ssl_context, **kwargs)
-
-        ssl_context = cls.create_ssl_context(**ssl_args)
+            tlslib.create_server_ssl_context, **kwargs)
+        ssl_context = tlslib.create_server_ssl_context(**ssl_args)
 
         aiohttp.web.run_app(application_factory(),
                             print=None,

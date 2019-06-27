@@ -3,10 +3,10 @@ import enum
 import importlib
 import pathlib
 
-import polynome.client
 import polynome.errors
 
 from polynome import asynclib
+from polynome.client import Client
 
 
 class ExitStatus(enum.Enum):
@@ -15,16 +15,14 @@ class ExitStatus(enum.Enum):
 
 
 class Formatter(argparse.ArgumentDefaultsHelpFormatter):
+    """Format arguments with default values for wide screens.
 
-    def __init__(self,
-                 prog,
-                 indent_increment=2,
-                 max_help_position=48,
-                 width=120):
-        super().__init__(prog,
-                         indent_increment,
-                         max_help_position,
-                         width)
+    Print the usage of the commands to the 140 character terminals.
+    """
+
+    def __init__(self, prog, indent_increment=2, max_help_position=48,
+                 width=140):
+        super().__init__(prog, indent_increment, max_help_position, width)
 
 
 class Command:
@@ -114,34 +112,14 @@ class Server(Command):
         (["--preload"],
          dict(action="store_true",
               default=False,
-              help="preload all models into the memory before start")),
-        (["--tls"],
-         dict(action="store_true",
-              default=False,
-              help="use TLS")),
-        (["--tlsverify"],
-         dict(action="store_true",
-              default=False,
-              help="use TLS and verify remove")),
-        (["--tlscacert"],
-         dict(metavar="TLS_CACERT",
-              default=pathlib.Path.home().joinpath(".polynome/cacert.pem"),
-              help="trust certs signed only by this CA")),
-        (["--tlscert"],
-         dict(metavar="TLS_CERT",
-              default=pathlib.Path.home().joinpath(".polynome/cert.pem"),
-              help="path to TLS certificate file")),
-        (["--tlskey"],
-         dict(metavar="TLS_KEY",
-              default=pathlib.Path.home().joinpath(".polynome/key.pem"),
-              help="path to TLS key fine"))]
+              help="preload all models into the memory before start"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         try:
             server = importlib.import_module("polynome.server")
             server.Server.start(**args.__dict__)
         except FileNotFoundError as e:
-            print(e)
+            print("Failed to start server. {0}.".format(e))
         return ExitStatus.Success
 
 
@@ -169,16 +147,15 @@ class Push(Command):
               help="model tag")),
         (["path"],
          dict(metavar="PATH",
-              type=str,
+              type=pathlib.Path,
               default=argparse.SUPPRESS,
               help="model location"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         print("loading model {0}:{1}".format(args.name, args.tag))
-        client = polynome.client.Client(service_url=args.service_url)
 
-        path = pathlib.Path(args.path)
-        task = client.push(args.name, args.tag, path)
+        client = Client.new(**args.__dict__)
+        task = client.push(args.name, args.tag, args.path)
 
         try:
             asynclib.run(task)
@@ -211,7 +188,7 @@ class Remove(Command):
               help="model tag"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = polynome.client.Client(service_url=args.service_url)
+        client = Client.new(**args.__dict__)
         task = client.remove(args.name, args.tag)
 
         try:
@@ -238,7 +215,7 @@ class List(Command):
     arguments = []
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = polynome.client.Client(service_url=args.service_url)
+        client = Client.new(**args.__dict__)
         task = client.list()
 
         try:
