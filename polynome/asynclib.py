@@ -28,6 +28,12 @@ async def extract_tar(fileobj: io.IOBase, dest: str) -> None:
         tf.extractall(dest)
 
 
+async def create_tar(fileobj: io.IOBase, path: str) -> None:
+    """Create TAR archive with the data specified by path."""
+    with tarfile.open(fileobj=fileobj, mode="w") as tf:
+        tf.add(path, arcname="")
+
+
 async def remove_dir(path: pathlib.Path, ignore_errors: bool = False):
     shutil.rmtree(path, ignore_errors=ignore_errors)
 
