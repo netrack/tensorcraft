@@ -41,13 +41,17 @@ class App:
         self.parser = argparse.ArgumentParser(
             prog=prog, formatter_class=commands.Formatter)
 
-        self.parser.set_defaults(func=lambda *x: self.parser.print_help())
+        self.parser.set_defaults(func=self.handle)
 
         for args, kwargs in self.arguments:
             self.parser.add_argument(*args, **kwargs)
 
         subparsers = self.parser.add_subparsers()
         self.modules = [m(subparsers) for m in modules]
+
+    def handle(self, args: argparse.Namespace) -> commands.ExitStatus:
+        self.parser.print_help()
+        return commands.ExitStatus.Failure
 
     def start(self):
         args = self.parser.parse_args()
