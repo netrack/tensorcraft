@@ -2,6 +2,7 @@ import argparse
 import enum
 import importlib
 import pathlib
+import yaml
 
 import polynome.errors
 
@@ -155,10 +156,10 @@ class Push(Command):
         print("loading model {0}:{1}".format(args.name, args.tag))
 
         client = Client.new(**args.__dict__)
-        task = client.push(args.name, args.tag, args.path)
+        coro = client.push(args.name, args.tag, args.path)
 
         try:
-            asynclib.run(task)
+            asynclib.run(coro)
         except Exception as e:
             print("Failed to push model. {0}".format(e))
             return ExitStatus.Failure
@@ -189,10 +190,10 @@ class Remove(Command):
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         client = Client.new(**args.__dict__)
-        task = client.remove(args.name, args.tag)
+        coro = client.remove(args.name, args.tag)
 
         try:
-            asynclib.run(task)
+            asynclib.run(coro)
         except polynome.errors.NotFoundError as e:
             if not args.quiet:
                 print("{0}.".format(e))
@@ -216,10 +217,10 @@ class List(Command):
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         client = Client.new(**args.__dict__)
-        task = client.list()
+        coro = client.list()
 
         try:
-            for model in asynclib.run(task):
+            for model in asynclib.run(coro):
                 print("{name}:{tag}".format(**model))
         except Exception as e:
             print("Failed to list models. {0}.".format(e))
@@ -257,10 +258,34 @@ class Export(Command):
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         client = Client.new(**args.__dict__)
-        task = client.export(args.name, args.tag, args.path)
+        coro = client.export(args.name, args.tag, args.path)
 
         try:
-            asynclib.run(task)
+            asynclib.run(coro)
+        except Exception as e:
+            print("Failed to export model. {0}".format(e))
+            return ExitStatus.Failure
+        return ExitStatus.Success
+
+
+class Status(Command):
+    """Shell command to retrieve server status information."""
+
+    name = "status"
+    aliases = []
+    help = "server status"
+
+    description = "Retrieve server status."""
+
+    arguments = []
+
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
+        client = Client.new(**args.__dict__)
+        coro = client.status()
+
+        try:
+            status = asynclib.run(coro)
+            print(yaml.dump(status), end="")
         except Exception as e:
             print("Failed to export model. {0}".format(e))
             return ExitStatus.Failure

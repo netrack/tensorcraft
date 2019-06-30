@@ -65,6 +65,7 @@ class Server:
         route = partial(route_to, api_version=polynome.__apiversion__)
 
         models_view = handlers.ModelView(models)
+        server_view = handlers.ServerView(models)
 
         self.app.add_routes([
             aiohttp.web.put(
@@ -77,7 +78,7 @@ class Server:
                 "/models/{name}/{tag}/predict", route(models_view.predict)),
 
             aiohttp.web.get("/models", route(models_view.list)),
-            aiohttp.web.get("/status", route(handlers.Status()))])
+            aiohttp.web.get("/status", route(server_view.status))])
 
         setup(self.app)
         logger.info("Server initialization completed")

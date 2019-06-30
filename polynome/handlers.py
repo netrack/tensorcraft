@@ -1,6 +1,8 @@
 import io
 import json
 
+import polynome
+
 from aiohttp import web
 
 from polynome.storage.base import AbstractStorage
@@ -98,8 +100,16 @@ class ModelView:
             raise web.HTTPNotFound(text=str(e))
 
 
-class Status:
+class ServerView:
     """Handler that returns server status."""
 
-    async def __call__(self, req: web.Request) -> web.Response:
-        return web.json_response(dict(status="running"))
+    def __init__(self, models: AbstractStorage) -> None:
+        self.models = models
+
+    async def status(self, req: web.Request) -> web.Response:
+        return web.json_response(dict(
+            models=len([m async for m in self.models.all()]),
+            server_version=polynome.__version__,
+            api_version=polynome.__apiversion__,
+            root_path=str(self.models.root_path),
+        ))
