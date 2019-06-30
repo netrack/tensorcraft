@@ -13,7 +13,7 @@ import polynome.errors
 from polynome import arglib
 from polynome import tlslib
 
-from typing import Coroutine, Union
+from typing import Coroutine, Union, Dict
 from urllib.parse import urlparse, urlunparse
 
 
@@ -127,3 +127,9 @@ class Client:
 
             async with aiofiles.open(path, "wb+") as tar:
                 await tar.write(await resp.read())
+
+    async def status(self) -> Dict[str, str]:
+        async with aiohttp.ClientSession() as session:
+            url = "{0}/status".format(self.service_url)
+            resp = await session.get(url)
+            return await resp.json()

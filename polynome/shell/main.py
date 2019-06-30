@@ -60,7 +60,8 @@ def main():
                      commands.Push,
                      commands.Remove,
                      commands.List,
-                     commands.Export])
+                     commands.Export,
+                     commands.Status])
 
     sys.exit(a.start().value)
 

@@ -184,6 +184,10 @@ class Cache:
 
         return self
 
+    @property
+    def root_path(self) -> pathlib.Path:
+        return self.storage.root_path
+
     async def all(self) -> typing.Sequence[Model]:
         """List all available models.
 

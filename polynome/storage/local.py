@@ -49,12 +49,16 @@ class FileSystem:
         return self
 
     @property
-    def on_delete(self):
+    def on_delete(self) -> signal.Signal:
         return self._on_delete
 
     @property
-    def on_save(self):
+    def on_save(self) -> signal.Signal:
         return self._on_save
+
+    @property
+    def root_path(self) -> pathlib.Path:
+        return self.models_path
 
     def build_model_from_document(self, document: typing.Dict) -> model.Model:
         path = self.models_path.joinpath(document["id"])

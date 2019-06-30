@@ -40,6 +40,7 @@ setuptools.setup(
         "humanize>=0.5.1",
         "numpy>=1.16.3",
         "pid>=2.2.3",
+        "pyyaml=>5.1.1",
         "semver>=2.8.1",
         "tensorflow>=2.0.0a0",
         "tinydb>=3.13.0",
