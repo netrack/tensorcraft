@@ -63,7 +63,6 @@ class ModelView:
 
         return web.json_response(dict(y=predictions))
 
-
     async def list(self, req: web.Request) -> web.Response:
         """HTTP handler to list available models.
 
@@ -95,9 +94,8 @@ class ModelView:
             await self.models.export(name, tag, writer)
 
             return web.Response(body=writer.getvalue())
-        except NotFoundError:
+        except NotFoundError as e:
             raise web.HTTPNotFound(text=str(e))
-        return resp
 
 
 class Status:

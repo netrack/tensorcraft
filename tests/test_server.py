@@ -1,7 +1,6 @@
 import aiofiles
 import aiohttp.test_utils as aiohttptest
 import aiohttp.web
-import filecmp
 import pathlib
 import tempfile
 import unittest
@@ -37,8 +36,8 @@ class TestServer(aiohttptest.AioHTTPTestCase):
         m = kerastest.new_model(name, tag)
 
         async with kerastest.crossentropy_model_tar(m.name, m.tag) as tarpath:
-            async with self.uploaded_model_tar(tarpath, m.name, m.tag) as model:
-                yield model
+            async with self.uploaded_model_tar(tarpath, m.name, m.tag) as mod:
+                yield mod
 
     @asynclib.asynccontextmanager
     async def uploaded_model_tar(self, tarpath: pathlib.Path,

@@ -225,3 +225,43 @@ class List(Command):
             print("Failed to list models. {0}.".format(e))
             return ExitStatus.Failure
         return ExitStatus.Success
+
+
+class Export(Command):
+    """Shell command to export model from the server."""
+
+    name = "export"
+    aliases = []
+    help = "export model tar"
+
+    description = "Export model as TAR."
+
+    arguments = [
+        (["-n", "--name"],
+         dict(metavar="NAME",
+              type=str,
+              required=True,
+              default=argparse.SUPPRESS,
+              help="model name")),
+        (["-t", "--tag"],
+         dict(metavar="TAG",
+              type=str,
+              required=True,
+              default=argparse.SUPPRESS,
+              help="model tag")),
+        (["path"],
+         dict(metavar="PATH",
+              type=pathlib.Path,
+              default=argparse.SUPPRESS,
+              help="file location"))]
+
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
+        client = Client.new(**args.__dict__)
+        task = client.export(args.name, args.tag, args.path)
+
+        try:
+            asynclib.run(task)
+        except Exception as e:
+            print("Failed to export model. {0}".format(e))
+            return ExitStatus.Failure
+        return ExitStatus.Success

@@ -1,5 +1,4 @@
 import aiohttp.test_utils as aiohttptest
-import aiohttp.web
 import pathlib
 import tempfile
 import unittest
