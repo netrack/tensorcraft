@@ -234,3 +234,6 @@ class Cache:
         # it is missing in the cache.
         async with self.lock.writer_lock:
             return await self.unsafe_load(name, tag)
+
+    async def export(self, name: str, tag: str, writer: io.IOBase) -> None:
+        return await self.storage.export(name, tag, writer)

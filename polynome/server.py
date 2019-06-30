@@ -64,18 +64,19 @@ class Server:
 
         route = partial(route_to, api_version=polynome.__apiversion__)
 
+        models_view = handlers.ModelView(models)
+
         self.app.add_routes([
             aiohttp.web.put(
-                "/models/{name}/{tag}",
-                route(handlers.Push(models))),
+                "/models/{name}/{tag}", route(models_view.save)),
+            aiohttp.web.get(
+                "/models/{name}/{tag}", route(models_view.export)),
             aiohttp.web.delete(
-                "/models/{name}/{tag}",
-                route(handlers.Remove(models))),
+                "/models/{name}/{tag}", route(models_view.delete)),
             aiohttp.web.post(
-                "/models/{name}/{tag}/predict",
-                route(handlers.Predict(models))),
+                "/models/{name}/{tag}/predict", route(models_view.predict)),
 
-            aiohttp.web.get("/models", route(handlers.List(models))),
+            aiohttp.web.get("/models", route(models_view.list)),
             aiohttp.web.get("/status", route(handlers.Status()))])
 
         setup(self.app)

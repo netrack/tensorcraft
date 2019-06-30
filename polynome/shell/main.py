@@ -11,7 +11,7 @@ class App:
     arguments = [
         (["-s", "--service-url"],
          dict(help="service endpoint",
-              default="https://localhost:5678")),
+              default="http://localhost:5678")),
         (["--tls"],
          dict(action="store_true",
               default=False,
@@ -59,7 +59,8 @@ def main():
             modules=[commands.Server,
                      commands.Push,
                      commands.Remove,
-                     commands.List])
+                     commands.List,
+                     commands.Export])
 
     sys.exit(a.start().value)
 

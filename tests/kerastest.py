@@ -42,7 +42,8 @@ async def crossentropy_model_tar(name: str, tag: str):
         yield tarpath
 
 
-def new_model():
-    return model.Model.new(name=cryptotest.random_string(),
-                           tag=cryptotest.random_string(),
+def new_model(name: str = None,
+              tag: str = None):
+    return model.Model.new(name=name or cryptotest.random_string(),
+                           tag=tag or cryptotest.random_string(),
                            root=pathlib.Path("/"))

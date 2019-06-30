@@ -47,8 +47,7 @@ def create_self_signed_cert(path: pathlib.Path) -> Tuple[pathlib.Path,
         datetime.datetime.utcnow() + datetime.timedelta(days=10)
     ).add_extension(
         x509.SubjectAlternativeName([x509.DNSName(u"localhost")]),
-        critical=False,
-    # Sign certificate with our private key.
+        critical=False,  # Sign certificate with our private key.
     ).sign(key, hashes.SHA256(), default_backend())
 
     keypath = path.joinpath("key.pem")

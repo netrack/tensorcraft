@@ -60,10 +60,10 @@ class FileSystem:
         path = self.models_path.joinpath(document["id"])
         return model.Model(path=path, loader=self.loader, **document)
 
-    def await_in_thread(self, task: typing.Coroutine):
+    def await_in_thread(self, coro: typing.Coroutine):
         """Run the given function within an instance executor."""
         loop = asyncio.get_event_loop()
-        return loop.run_in_executor(self.executor, asynclib.run, task)
+        return loop.run_in_executor(self.executor, asynclib.run, coro)
 
     async def all(self) -> typing.Sequence[model.Model]:
         """List available models and their tags.
@@ -107,14 +107,14 @@ class FileSystem:
         m = model.Model.new(name, tag, self.models_path, self.loader)
 
         try:
-            task = asynclib.extract_tar(fileobj=stream, dest=m.path)
-            await self.await_in_thread(task)
+            coro = asynclib.extract_tar(fileobj=stream, dest=m.path)
+            await self.await_in_thread(coro)
 
             # Now load the model into the memory, to pass all validations.
             self.logger.debug("Ensuring model has correct format")
 
-            task = asyncio.coroutine(m.load)()
-            m = await self.await_in_thread(task)
+            coro = asyncio.coroutine(m.load)()
+            m = await self.await_in_thread(coro)
 
             await self.save_to_meta(m)
 
@@ -130,8 +130,8 @@ class FileSystem:
             # The caller have to ensure atomicity of this operation.
             await self.meta.remove(query_by_id(m.id))
 
-            task = asynclib.remove_dir(m.path, ignore_errors=True)
-            await self.await_in_thread(task)
+            coro = asynclib.remove_dir(m.path, ignore_errors=True)
+            await self.await_in_thread(coro)
             raise e
 
     async def delete_from_meta(self, name: str, tag: str) -> model.Model:
@@ -184,3 +184,13 @@ class FileSystem:
         """Load model with the given name and tag."""
         m = await self.load_from_meta(name, tag)
         return await self.await_in_thread(asyncio.coroutine(m.load)())
+
+    async def export(self, name: str, tag: str, writer: io.IOBase) -> None:
+        """Export serialized model.
+
+        Method writes a serialized TAR to the stream.
+        """
+        m = await self.load_from_meta(name, tag)
+
+        coro = asynclib.create_tar(fileobj=writer, path=m.path)
+        await self.await_in_thread(coro)

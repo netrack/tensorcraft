@@ -1,3 +1,4 @@
+import aiofiles
 import aiohttp
 import aiohttp.web
 import pathlib
@@ -13,6 +14,7 @@ from polynome import arglib
 from polynome import tlslib
 
 from typing import Coroutine, Union
+from urllib.parse import urlparse, urlunparse
 
 
 async def async_progress(path: pathlib.Path, reader: Coroutine) -> bytes:
@@ -55,6 +57,13 @@ class Client:
 
     def __init__(self, service_url: str,
                  ssl_context: Union[ssl.SSLContext, None] = None):
+
+        # Change the protocol to "HTTPS" if SSL context is given.
+        if ssl_context:
+            url = urlparse(service_url)
+            _, *parts = url
+            service_url = urlunparse(["https"]+parts)
+
         self.service_url = service_url
         self.ssl_context = ssl_context
 
@@ -106,3 +115,15 @@ class Client:
             async with session.get(url, headers=self.default_headers,
                                    ssl_context=self.ssl_context) as resp:
                 return await resp.json()
+
+    async def export(self, name: str, tag: str, path: pathlib.Path) -> None:
+        """Export the model from the server."""
+        async with aiohttp.ClientSession() as session:
+            url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
+            resp = await session.get(url)
+
+            if resp.status == aiohttp.web.HTTPNotFound.status_code:
+                raise polynome.errors.NotFoundError(name, tag)
+
+            async with aiofiles.open(path, "wb+") as tar:
+                await tar.write(await resp.read())
