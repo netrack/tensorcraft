@@ -10,7 +10,7 @@ from polynome.errors import InputShapeError, NotFoundError, DuplicateError
 
 
 class ModelView:
-    """Model view to handler all actions related to models.
+    """View to handle actions related to models.
 
     Attributes:
         models -- container of models
@@ -101,12 +101,13 @@ class ModelView:
 
 
 class ServerView:
-    """Handler that returns server status."""
+    """Server view to handle actions related to server."""
 
     def __init__(self, models: AbstractStorage) -> None:
         self.models = models
 
     async def status(self, req: web.Request) -> web.Response:
+        """Handler that returns server status."""
         return web.json_response(dict(
             models=len([m async for m in self.models.all()]),
             server_version=polynome.__version__,

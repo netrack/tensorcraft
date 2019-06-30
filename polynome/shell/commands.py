@@ -119,8 +119,9 @@ class Server(Command):
         try:
             server = importlib.import_module("polynome.server")
             server.Server.start(**args.__dict__)
-        except FileNotFoundError as e:
+        except Exception as e:
             print("Failed to start server. {0}.".format(e))
+            return ExitStatus.Failure
         return ExitStatus.Success
 
 
