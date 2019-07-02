@@ -4,6 +4,7 @@ import json
 import polynome
 
 from aiohttp import web
+from typing import Dict
 
 from polynome.storage.base import AbstractStorage
 from polynome.errors import InputShapeError, NotFoundError, DuplicateError
@@ -18,6 +19,9 @@ class ModelView:
 
     def __init__(self, models: AbstractStorage) -> None:
         self.models = models
+
+    def make_error_headers(self, e: ModelError): Dict[str, str]:
+        return {"Error-Code": e.error_code}
 
     async def save(self, req: web.Request) -> web.Response:
         """HTTP handler to save the model.
@@ -34,8 +38,9 @@ class ModelView:
         try:
             model_stream = io.BytesIO(await req.read())
             await self.models.save(name, tag, model_stream)
-        except DuplicateError as e:
-            raise web.HTTPConflict(text=str(e))
+        except errors.ModelError as e:
+            raise web.HTTPConflict(text=str(e),
+                                   headers=self.make_error_headers(e))
 
         return web.Response(status=web.HTTPCreated.status_code)
 
@@ -61,7 +66,8 @@ class ModelView:
         except (InputShapeError, json.decoder.JSONDecodeError) as e:
             raise web.HTTPBadRequest(text=str(e))
         except NotFoundError as e:
-            raise web.HTTPNotFound(text=str(e))
+            raise web.HTTPNotFound(text=str(e),
+                                   headers=self.make_error_headers(e))
 
         return web.json_response(dict(y=predictions))
 
@@ -84,7 +90,8 @@ class ModelView:
         try:
             await self.models.delete(name, tag)
         except NotFoundError as e:
-            raise web.HTTPNotFound(text=str(e))
+            raise web.HTTPNotFound(text=str(e),
+                                   headers=self.make_error_headers(e))
         return web.Response(status=web.HTTPOk.status_code)
 
     async def export(self, req: web.Request) -> web.Response:
@@ -97,7 +104,8 @@ class ModelView:
 
             return web.Response(body=writer.getvalue())
         except NotFoundError as e:
-            raise web.HTTPNotFound(text=str(e))
+            raise web.HTTPNotFound(text=str(e),
+                                   headers=self.make_error_headers(e))
 
 
 class ServerView:

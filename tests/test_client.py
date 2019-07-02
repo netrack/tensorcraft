@@ -103,8 +103,35 @@ class TestClient(asynctest.AsyncTestCase):
         async with self.handle_request("PUT", path) as client:
             b = cryptotest.random_bytes()
 
-            res = await client.push(m.name, m.tag, io.BytesIO(b))
-            self.assertIsNone(res)
+            resp = await client.push(m.name, m.tag, io.BytesIO(b))
+            self.assertIsNone(resp)
+
+    @asynctest.unittest_run_loop
+    @unittest.skip("error codes are not supported yet")
+    async def test_push_latest(self):
+        self.skip()
+        m = kerastest.new_model()
+        path = f"/models/{m.name}/latest"
+
+        resp = aiohttp.web.Response(status=409,
+                                    headers={"Error-Code": 611})
+
+        async with self.handle_request("PUT", path) as client:
+            with self.assertRaises(errors.LatestTagError):
+                b = cryptotest.random_bytes()
+                resp = await client.push(m.name, "latest", io.BytesIO(b))
+
+    @asynctest.unittest_run_loop
+    async def test_push_duplicate(self):
+        m = kerastest.new_model()
+        path = f"/models/{m.name}/{m.tag}"
+
+        resp = aiohttp.web.Response(status=409)
+        b = cryptotest.random_bytes()
+
+        async with self.handle_request("PUT", path, resp) as client:
+            with self.assertRaises(errors.DuplicateError):
+                await client.push(m.name, m.tag, io.BytesIO(b))
 
 
 if __name__ == "__main__":

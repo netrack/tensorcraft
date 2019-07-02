@@ -61,8 +61,11 @@ class Client:
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
 
-            await session.put(url, data=reader, headers=self.default_headers,
-                              ssl_context=self.ssl_context)
+            resp = await session.put(url, data=reader,
+                                     headers=self.default_headers,
+                                     ssl_context=self.ssl_context)
+            if resp.status == aiohttp.web.HTTPConflict.status_code:
+                raise polynome.errors.DuplicateError(name, tag)
 
     async def remove(self, name: str, tag: str):
         """Remove the model from the server.
@@ -96,7 +99,7 @@ class Client:
                 raise polynome.errors.NotFoundError(name, tag)
 
             await writer.write(await resp.read())
-                
+
 
     async def status(self) -> Dict[str, str]:
         async with aiohttp.ClientSession() as session:
