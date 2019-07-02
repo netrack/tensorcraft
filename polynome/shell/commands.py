@@ -1,3 +1,4 @@
+import aiofiles
 import argparse
 import enum
 import importlib
@@ -266,12 +267,14 @@ class Export(Command):
               default=argparse.SUPPRESS,
               help="file location"))]
 
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
-        client = Client.new(**args.__dict__)
-        coro = client.export(args.name, args.tag, args.path)
+    async def _handle(self, args: argparse.Namespace) -> ExitStatus:
+        async with aiofiles.open(args.path, "wb+") as writer:
+            client = Client.new(**args.__dict__)
+            await client.export(args.name, args.tag, writer)
 
+    def handle(self, args: argparse.Namespace) -> ExitStatus:
         try:
-            asynclib.run(coro)
+            asynclib.run(self._handle(args))
         except Exception as e:
             print("Failed to export model. {0}".format(e))
             return ExitStatus.Failure

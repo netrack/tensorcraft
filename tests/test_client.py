@@ -37,12 +37,12 @@ class TestClient(asynctest.AsyncTestCase):
 
     @asynctest.unittest_run_loop
     async def test_list(self):
-        exp_value = cryptotest.random_dict()
-        resp = aiohttp.web.json_response(exp_value)
+        want_value = cryptotest.random_dict()
+        resp = aiohttp.web.json_response(want_value)
 
         async with self.handle_request("GET", "/models", resp) as client:
             recv_value = await client.list()
-            self.assertEqual(exp_value, recv_value)
+            self.assertEqual(want_value, recv_value)
 
     @asynctest.unittest_run_loop
     async def test_remove(self):
@@ -64,12 +64,12 @@ class TestClient(asynctest.AsyncTestCase):
 
     @asynctest.unittest_run_loop
     async def test_status(self):
-        exp_value = cryptotest.random_dict()
-        resp = aiohttp.web.json_response(exp_value)
+        want_value = cryptotest.random_dict()
+        resp = aiohttp.web.json_response(want_value)
 
         async with self.handle_request("GET", "/status", resp) as client:
             recv_value = await client.status()
-            self.assertEqual(exp_value, recv_value)
+            self.assertEqual(want_value, recv_value)
 
     @asynctest.unittest_run_loop
     async def test_export_not_found(self):
@@ -86,16 +86,14 @@ class TestClient(asynctest.AsyncTestCase):
         m = kerastest.new_model()
         path = f"/models/{m.name}/{m.tag}"
 
-        exp_value = cryptotest.random_string(6)
-        resp = aiohttp.web.Response(body=exp_value)
+        want_value = cryptotest.random_bytes()
+        resp = aiohttp.web.Response(body=want_value)
 
         async with self.handle_request("GET", path, resp) as client:
-            with tempfile.NamedTemporaryFile("w+") as dest:
-                await client.export(m.name, m.tag, dest.name)
+            writer = io.BytesIO()
+            await client.export(m.name, m.tag, asynclib.AsyncIO(writer))
 
-                dest.seek(0)
-                recv_value = dest.read()
-                self.assertEqual(exp_value, recv_value)
+            self.assertEqual(want_value, writer.getvalue())
 
     @asynctest.unittest_run_loop
     async def test_push(self):
@@ -103,7 +101,7 @@ class TestClient(asynctest.AsyncTestCase):
         path = f"/models/{m.name}/{m.tag}"
 
         async with self.handle_request("PUT", path) as client:
-            b = bytes(cryptotest.random_string(1024), "utf-8")
+            b = cryptotest.random_bytes()
 
             res = await client.push(m.name, m.tag, io.BytesIO(b))
             self.assertIsNone(res)

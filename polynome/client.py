@@ -1,7 +1,6 @@
 import aiofiles
 import aiohttp
 import aiohttp.web
-import io
 import pathlib
 import ssl
 import tarfile
@@ -13,7 +12,7 @@ import polynome.errors
 from polynome import arglib
 from polynome import tlslib
 
-from typing import Coroutine, Union, Dict
+from typing import Coroutine, Union, Dict, IO
 from urllib.parse import urlparse, urlunparse
 
 
@@ -53,7 +52,7 @@ class Client:
         self = cls(kwargs.get("service_url"), ssl_context)
         return self
 
-    async def push(self, name: str, tag: str, reader: io.IOBase) -> None:
+    async def push(self, name: str, tag: str, reader: IO) -> None:
         """Push the model to the server.
 
         The model is expected to be a tarball with in a SaveModel
@@ -87,7 +86,7 @@ class Client:
                                    ssl_context=self.ssl_context) as resp:
                 return await resp.json()
 
-    async def export(self, name: str, tag: str, path: pathlib.Path) -> None:
+    async def export(self, name: str, tag: str, writer: IO) -> None:
         """Export the model from the server."""
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
@@ -96,8 +95,8 @@ class Client:
             if resp.status == aiohttp.web.HTTPNotFound.status_code:
                 raise polynome.errors.NotFoundError(name, tag)
 
-            async with aiofiles.open(path, "wb+") as tar:
-                await tar.write(await resp.read())
+            await writer.write(await resp.read())
+                
 
     async def status(self) -> Dict[str, str]:
         async with aiohttp.ClientSession() as session:
