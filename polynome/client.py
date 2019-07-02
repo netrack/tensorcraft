@@ -1,10 +1,10 @@
 import aiofiles
 import aiohttp
 import aiohttp.web
+import io
 import pathlib
-import humanize
-import tarfile
 import ssl
+import tarfile
 
 import polynome
 import polynome.asynclib
@@ -15,29 +15,6 @@ from polynome import tlslib
 
 from typing import Coroutine, Union, Dict
 from urllib.parse import urlparse, urlunparse
-
-
-async def async_progress(path: pathlib.Path, reader: Coroutine) -> bytes:
-    def progress(loaded, total, bar_len=30):
-        filled_len = int(round(bar_len * loaded / total))
-        empty_len = bar_len - filled_len
-
-        loaded = humanize.naturalsize(loaded).replace(" ", "")
-        total = humanize.naturalsize(total).replace(" ", "")
-
-        bar = "=" * filled_len + " " * empty_len
-        print("[{0}] {1}/{2}\r".format(bar, loaded, total), end="", flush=True)
-
-    total = path.stat().st_size
-    loaded = 0
-
-    progress(loaded, total)
-    async for chunk in reader:
-        yield chunk
-        loaded += len(chunk)
-
-    progress(loaded, total)
-    print("", flush=True)
 
 
 class Client:
@@ -76,20 +53,14 @@ class Client:
         self = cls(kwargs.get("service_url"), ssl_context)
         return self
 
-    async def push(self, name: str, tag: str, path: pathlib.Path):
+    async def push(self, name: str, tag: str, reader: io.IOBase) -> None:
         """Push the model to the server.
 
         The model is expected to be a tarball with in a SaveModel
         format.
         """
-        if not path.exists():
-            raise ValueError("{0} does not exist".format(path))
-        if not tarfile.is_tarfile(str(path)):
-            raise ValueError("{0} is not a tar file".format(path))
-
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
-            reader = async_progress(path, polynome.asynclib.reader(path))
 
             await session.put(url, data=reader, headers=self.default_headers,
                               ssl_context=self.ssl_context)

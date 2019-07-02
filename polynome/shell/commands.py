@@ -2,12 +2,14 @@ import argparse
 import enum
 import importlib
 import pathlib
+import tarfile
 import yaml
 
 import polynome.errors
 
 from polynome import asynclib
 from polynome.client import Client
+from polynome.shell import termlib
 
 
 class ExitStatus(enum.Enum):
@@ -156,8 +158,15 @@ class Push(Command):
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         print("loading model {0}:{1}".format(args.name, args.tag))
 
+        if not args.path.exists():
+            raise ValueError("{0} does not exist".format(path))
+        if not tarfile.is_tarfile(str(args.path)):
+            raise ValueError("{0} is not a tar file".format(path))
+
         client = Client.new(**args.__dict__)
-        coro = client.push(args.name, args.tag, args.path)
+
+        reader = termlib.async_progress(asynclib.reader(args.path))
+        coro = client.push(args.name, args.tag, reader)
 
         try:
             asynclib.run(coro)

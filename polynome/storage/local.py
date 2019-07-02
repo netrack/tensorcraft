@@ -12,13 +12,14 @@ import polynome.logging
 from polynome import asynclib
 from polynome import model
 from polynome import signal
+from polynome.storage import base
 from polynome.storage import metadata
 from polynome.storage.metadata import (query_by_name,
                                        query_by_name_and_tag,
                                        query_by_id)
 
 
-class FileSystem:
+class FileSystem(base.AbstractStorage):
     """Storage of models based on ordinary file system.
 
     Implementation saves the models as unpacked TensorFlow SaveModel
