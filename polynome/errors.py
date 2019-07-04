@@ -17,6 +17,8 @@ class InputShapeError(Exception):
 
 class ModelError(Exception):
 
+    error_code = 600
+
     def __init__(self, name: str, tag: str):
         self.name = name
         self.tag = tag
