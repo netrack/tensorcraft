@@ -1,4 +1,5 @@
 import datetime
+import math
 import pathlib
 import random
 import string
@@ -13,7 +14,16 @@ from typing import Tuple
 
 
 def random_string(length=5):
-    return "".join(random.sample(string.ascii_letters, length))
+    multiplier = math.ceil(length/len(string.ascii_letters))
+    return "".join(random.sample(string.ascii_letters*multiplier, length))
+
+
+def random_bytes(length=1024):
+    return bytes(random_string(length), "utf-8")
+
+
+def random_dict(items=10):
+    return {random_string(): random_string() for _ in range(items)}
 
 
 def create_self_signed_cert(path: pathlib.Path) -> Tuple[pathlib.Path,

@@ -1,43 +1,16 @@
-import aiofiles
 import aiohttp
 import aiohttp.web
-import pathlib
-import humanize
-import tarfile
 import ssl
 
 import polynome
 import polynome.asynclib
-import polynome.errors
 
 from polynome import arglib
+from polynome import errors
 from polynome import tlslib
 
-from typing import Coroutine, Union, Dict
+from typing import Union, Dict, IO
 from urllib.parse import urlparse, urlunparse
-
-
-async def async_progress(path: pathlib.Path, reader: Coroutine) -> bytes:
-    def progress(loaded, total, bar_len=30):
-        filled_len = int(round(bar_len * loaded / total))
-        empty_len = bar_len - filled_len
-
-        loaded = humanize.naturalsize(loaded).replace(" ", "")
-        total = humanize.naturalsize(total).replace(" ", "")
-
-        bar = "=" * filled_len + " " * empty_len
-        print("[{0}] {1}/{2}\r".format(bar, loaded, total), end="", flush=True)
-
-    total = path.stat().st_size
-    loaded = 0
-
-    progress(loaded, total)
-    async for chunk in reader:
-        yield chunk
-        loaded += len(chunk)
-
-    progress(loaded, total)
-    print("", flush=True)
 
 
 class Client:
@@ -67,6 +40,13 @@ class Client:
         self.service_url = service_url
         self.ssl_context = ssl_context
 
+    def make_error_from_response(self, resp: aiohttp.web.Response,
+                                 success_status=200) -> Union[Exception, None]:
+        if resp.status != success_status:
+            error_code = resp.headers.get("Error-Code", 0)
+            return errors.ModelError.from_error_code(error_code)
+        return None
+
     @classmethod
     def new(cls, **kwargs):
         ssl_args = arglib.filter_callable_arguments(
@@ -76,23 +56,23 @@ class Client:
         self = cls(kwargs.get("service_url"), ssl_context)
         return self
 
-    async def push(self, name: str, tag: str, path: pathlib.Path):
+    async def push(self, name: str, tag: str, reader: IO) -> None:
         """Push the model to the server.
 
         The model is expected to be a tarball with in a SaveModel
         format.
         """
-        if not path.exists():
-            raise ValueError("{0} does not exist".format(path))
-        if not tarfile.is_tarfile(str(path)):
-            raise ValueError("{0} is not a tar file".format(path))
-
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
-            reader = async_progress(path, polynome.asynclib.reader(path))
 
-            await session.put(url, data=reader, headers=self.default_headers,
-                              ssl_context=self.ssl_context)
+            resp = await session.put(url, data=reader,
+                                     headers=self.default_headers,
+                                     ssl_context=self.ssl_context)
+
+            error_class = self.make_error_from_response(resp,
+                                                        success_status=201)
+            if error_class:
+                raise error_class(name, tag)
 
     async def remove(self, name: str, tag: str):
         """Remove the model from the server.
@@ -104,8 +84,9 @@ class Client:
             resp = await session.delete(url, headers=self.default_headers,
                                         ssl_context=self.ssl_context)
 
-            if resp.status == aiohttp.web.HTTPNotFound.status_code:
-                raise polynome.errors.NotFoundError(name, tag)
+            error_class = self.make_error_from_response(resp)
+            if error_class:
+                raise error_class(name, tag)
 
     async def list(self):
         """List available models on the server."""
@@ -116,17 +97,17 @@ class Client:
                                    ssl_context=self.ssl_context) as resp:
                 return await resp.json()
 
-    async def export(self, name: str, tag: str, path: pathlib.Path) -> None:
+    async def export(self, name: str, tag: str, writer: IO) -> None:
         """Export the model from the server."""
         async with aiohttp.ClientSession() as session:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
             resp = await session.get(url)
 
-            if resp.status == aiohttp.web.HTTPNotFound.status_code:
-                raise polynome.errors.NotFoundError(name, tag)
+            error_class = self.make_error_from_response(resp)
+            if error_class:
+                raise error_class(name, tag)
 
-            async with aiofiles.open(path, "wb+") as tar:
-                await tar.write(await resp.read())
+            await writer.write(await resp.read())
 
     async def status(self) -> Dict[str, str]:
         async with aiohttp.ClientSession() as session:

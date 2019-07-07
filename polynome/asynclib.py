@@ -5,6 +5,8 @@ import pathlib
 import tarfile
 import shutil
 
+from typing import IO
+
 
 def run(main):
     loop = asyncio.new_event_loop()
@@ -20,6 +22,18 @@ async def reader(path: pathlib.Path, chunk_size=64*1024) -> bytes:
         while len(chunk):
             yield chunk
             chunk = await f.read(chunk_size)
+
+
+class AsyncIO:
+
+    def __init__(self, io: IO):
+        self.io = io
+
+    async def read(self, size=-1):
+        return self.io.read(size)
+
+    async def write(self, b):
+        return self.io.write(b)
 
 
 async def extract_tar(fileobj: io.IOBase, dest: str) -> None:

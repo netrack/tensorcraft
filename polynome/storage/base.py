@@ -24,7 +24,7 @@ class AbstractStorage(metaclass=ABCMeta):
 
     @abstractmethod
     async def all(self) -> Sequence[Model]:
-        """List all exisiting models.
+        """List all existing models.
 
         The returned models are not necessary loaded for the sake of
         performance.
@@ -38,7 +38,7 @@ class AbstractStorage(metaclass=ABCMeta):
     async def save(self, name: str, tag: str, stream: io.IOBase) -> Model:
         """Save the model archive.
 
-        The persistance guarantee is provided by the implementation.
+        The persistence guarantee is provided by the implementation.
 
         Args:
             name (str): Model name.
@@ -82,7 +82,7 @@ class AbstractStorage(metaclass=ABCMeta):
         """Export model to the writer
 
         Write model's archive into the stream. Implementation must consider
-        concurent requests to export the same model.
+        concurrent requests to export the same model.
 
         Args:
             name (str): Model name

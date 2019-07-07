@@ -6,19 +6,20 @@ import operator
 import pathlib
 import typing
 
-import polynome.errors
 import polynome.logging
 
 from polynome import asynclib
+from polynome import errors
 from polynome import model
 from polynome import signal
+from polynome.storage import base
 from polynome.storage import metadata
 from polynome.storage.metadata import (query_by_name,
                                        query_by_name_and_tag,
                                        query_by_id)
 
 
-class FileSystem:
+class FileSystem(base.AbstractStorage):
     """Storage of models based on ordinary file system.
 
     Implementation saves the models as unpacked TensorFlow SaveModel
@@ -85,7 +86,7 @@ class FileSystem:
             if await meta.get(query_by_name_and_tag(m.name, m.tag)):
                 self.logger.debug("Model %s already exists", m)
 
-                raise polynome.errors.DuplicateError(m.name, m.tag)
+                raise errors.DuplicateError(m.name, m.tag)
 
             # Insert the model metadata, and update the latest model link.
             await meta.insert(m.to_dict())
@@ -108,6 +109,10 @@ class FileSystem:
 
         Extracts the TAR archive into the data directory.
         """
+        # Raise error on attempt to save model with the latest tag.
+        if tag == model.Tag.Latest.value:
+            raise errors.LatestTagError(name, tag)
+
         m = model.Model.new(name, tag, self.models_path, self.loader)
 
         try:
@@ -176,12 +181,12 @@ class FileSystem:
 
             self.logger.info("Removed model %s:%s", name, tag)
         except FileNotFoundError:
-            raise polynome.errors.NotFoundError(name, tag)
+            raise errors.NotFoundError(name, tag)
 
     async def load_from_meta(self, name: str, tag: str):
         document = await self.meta.get(query_by_name_and_tag(name, tag))
         if not document:
-            raise polynome.errors.NotFoundError(name, tag)
+            raise errors.NotFoundError(name, tag)
         return self.build_model_from_document(document)
 
     async def load(self, name: str, tag: str) -> model.Model:

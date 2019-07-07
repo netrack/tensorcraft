@@ -1,3 +1,4 @@
+import aiohttp.web
 import asyncio
 import typing
 import unittest
@@ -32,13 +33,6 @@ class AsyncGeneratorMock(unittest.mock.MagicMock):
             raise StopAsyncIteration
 
 
-def unittest_run_loop(coroutine):
-    def test(*args, **kwargs):
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(coroutine(*args, **kwargs))
-    return test
-
-
 class AsyncTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -53,3 +47,16 @@ class AsyncTestCase(unittest.TestCase):
 
     async def tearDownAsync(self) -> None:
         pass
+
+
+def unittest_run_loop(coroutine):
+    def test(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(coroutine(*args, **kwargs))
+    return test
+
+
+def unittest_handler(awaitable):
+    async def _handler(req: aiohttp.web.Request) -> aiohttp.web.Response:
+        return await awaitable()
+    return _handler
