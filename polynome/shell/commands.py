@@ -159,17 +159,18 @@ class Push(Command):
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         print(f"loading model {args.name}:{args.tag}")
 
-        if not args.path.exists():
-            raise ValueError(f"{args.path} does not exist")
-        if not tarfile.is_tarfile(str(args.path)):
-            raise ValueError(f"{args.path} is not a tar file")
-
-        client = Client.new(**args.__dict__)
-
-        reader = termlib.async_progress(asynclib.reader(args.path))
-        coro = client.push(args.name, args.tag, reader)
-
         try:
+            if not args.path.exists():
+                raise ValueError(f"{args.path} does not exist")
+            if not tarfile.is_tarfile(str(args.path)):
+                raise ValueError(f"{args.path} is not a tar file")
+
+            client = Client.new(**args.__dict__)
+
+            asyncreader = asynclib.reader(args.path)
+            reader = termlib.async_progress(args.path, asyncreader)
+            coro = client.push(args.name, args.tag, reader)
+
             asynclib.run(coro)
         except Exception as e:
             print(f"Failed to push model. {e}")
