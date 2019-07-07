@@ -1,18 +1,15 @@
-import aiofiles
 import aiohttp
 import aiohttp.web
-import pathlib
 import ssl
-import tarfile
 
 import polynome
 import polynome.asynclib
-import polynome.errors
 
 from polynome import arglib
+from polynome import errors
 from polynome import tlslib
 
-from typing import Coroutine, Union, Dict, IO
+from typing import Union, Dict, IO
 from urllib.parse import urlparse, urlunparse
 
 
@@ -43,6 +40,13 @@ class Client:
         self.service_url = service_url
         self.ssl_context = ssl_context
 
+    def make_error_from_response(self, resp: aiohttp.web.Response,
+                                 success_status=200) -> Union[Exception, None]:
+        if resp.status != success_status:
+            error_code = resp.headers.get("Error-Code", 0)
+            return errors.ModelError.from_error_code(error_code)
+        return None
+
     @classmethod
     def new(cls, **kwargs):
         ssl_args = arglib.filter_callable_arguments(
@@ -64,8 +68,11 @@ class Client:
             resp = await session.put(url, data=reader,
                                      headers=self.default_headers,
                                      ssl_context=self.ssl_context)
-            if resp.status == aiohttp.web.HTTPConflict.status_code:
-                raise polynome.errors.DuplicateError(name, tag)
+
+            error_class = self.make_error_from_response(resp,
+                                                        success_status=201)
+            if error_class:
+                raise error_class(name, tag)
 
     async def remove(self, name: str, tag: str):
         """Remove the model from the server.
@@ -77,8 +84,9 @@ class Client:
             resp = await session.delete(url, headers=self.default_headers,
                                         ssl_context=self.ssl_context)
 
-            if resp.status == aiohttp.web.HTTPNotFound.status_code:
-                raise polynome.errors.NotFoundError(name, tag)
+            error_class = self.make_error_from_response(resp)
+            if error_class:
+                raise error_class(name, tag)
 
     async def list(self):
         """List available models on the server."""
@@ -95,11 +103,11 @@ class Client:
             url = "{0}/models/{1}/{2}".format(self.service_url, name, tag)
             resp = await session.get(url)
 
-            if resp.status == aiohttp.web.HTTPNotFound.status_code:
-                raise polynome.errors.NotFoundError(name, tag)
+            error_class = self.make_error_from_response(resp)
+            if error_class:
+                raise error_class(name, tag)
 
             await writer.write(await resp.read())
-
 
     async def status(self) -> Dict[str, str]:
         async with aiohttp.ClientSession() as session:

@@ -4,7 +4,7 @@ import json
 import polynome
 
 from aiohttp import web
-from typing import Dict, Union
+from typing import Union
 
 from polynome import errors
 from polynome.storage.base import AbstractStorage

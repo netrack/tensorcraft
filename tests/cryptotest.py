@@ -17,6 +17,7 @@ def random_string(length=5):
     multiplier = math.ceil(length/len(string.ascii_letters))
     return "".join(random.sample(string.ascii_letters*multiplier, length))
 
+
 def random_bytes(length=1024):
     return bytes(random_string(length), "utf-8")
 

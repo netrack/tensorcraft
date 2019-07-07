@@ -15,9 +15,23 @@ class InputShapeError(Exception):
             self.expected_dims, self.actual_dims)
 
 
-class ModelError(Exception):
+class _ModelErrorMeta(type):
 
-    error_code = 600
+    error_mapping = {}
+
+    def __new__(cls, *args, **kwargs):
+        klass = super().__new__(cls, *args, **kwargs)
+        if hasattr(klass, "error_code"):
+            cls.error_mapping[klass.error_code] = klass
+        return klass
+
+    def from_error_code(self, error_code: str):
+        return self.error_mapping.get(error_code, ModelError)
+
+
+class ModelError(Exception, metaclass=_ModelErrorMeta):
+
+    error_code = "Model Error"
 
     def __init__(self, name: str, tag: str):
         self.name = name
@@ -27,7 +41,7 @@ class ModelError(Exception):
 class NotFoundError(ModelError):
     """Exception raised on missing model."""
 
-    error_code = 604
+    error_code = "Model Not Found"
 
     def __str__(self):
         return f"Model {self.name}:{self.tag} not found"
@@ -36,7 +50,7 @@ class NotFoundError(ModelError):
 class NotLoadedError(ModelError):
     """Exception raised on attempt to use not loaded model."""
 
-    error_code = 609
+    error_code = "Model Not Loaded"
 
     def __str__(self):
         return f"Model {self.name}:{self.tag} is not loaded"
@@ -45,7 +59,7 @@ class NotLoadedError(ModelError):
 class DuplicateError(ModelError):
     """Exception raised on attempt to save model with the same name and tag."""
 
-    error_code = 610
+    error_code = "Model Duplicate"
 
     def __str__(self):
         return f"Model {self.name}:{self.tag} is a duplicate"
@@ -54,7 +68,7 @@ class DuplicateError(ModelError):
 class LatestTagError(ModelError):
     """Exception raised on attempt to save model with latest tag."""
 
-    error_code = 611
+    error_code = "Model Latest Tag"
 
     def __str__(self):
         return f"Model {self.name}:{self.tag} cannot be latest"

@@ -60,5 +60,3 @@ def unittest_handler(awaitable):
     async def _handler(req: aiohttp.web.Request) -> aiohttp.web.Response:
         return await awaitable()
     return _handler
-
-

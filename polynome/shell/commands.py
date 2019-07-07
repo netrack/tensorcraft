@@ -123,7 +123,7 @@ class Server(Command):
             server = importlib.import_module("polynome.server")
             server.Server.start(**args.__dict__)
         except Exception as e:
-            print("Failed to start server. {0}.".format(e))
+            print(f"Failed to start server. {e}.")
             return ExitStatus.Failure
         return ExitStatus.Success
 
@@ -157,12 +157,12 @@ class Push(Command):
               help="model location"))]
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
-        print("loading model {0}:{1}".format(args.name, args.tag))
+        print(f"loading model {args.name}:{args.tag}")
 
         if not args.path.exists():
-            raise ValueError("{0} does not exist".format(path))
+            raise ValueError(f"{args.path} does not exist")
         if not tarfile.is_tarfile(str(args.path)):
-            raise ValueError("{0} is not a tar file".format(path))
+            raise ValueError(f"{args.path} is not a tar file")
 
         client = Client.new(**args.__dict__)
 
@@ -172,7 +172,7 @@ class Push(Command):
         try:
             asynclib.run(coro)
         except Exception as e:
-            print("Failed to push model. {0}".format(e))
+            print(f"Failed to push model. {e}")
             return ExitStatus.Failure
         return ExitStatus.Success
 
@@ -207,10 +207,10 @@ class Remove(Command):
             asynclib.run(coro)
         except polynome.errors.NotFoundError as e:
             if not args.quiet:
-                print("{0}.".format(e))
+                print(f"{e}")
                 return ExitStatus.Failure
         except Exception as e:
-            print("Failed to remove model. {0}.".format(e))
+            print(f"Failed to remove model. {e}.")
             return ExitStatus.Failure
         return ExitStatus.Success
 
@@ -234,7 +234,7 @@ class List(Command):
             for model in asynclib.run(coro):
                 print("{name}:{tag}".format(**model))
         except Exception as e:
-            print("Failed to list models. {0}.".format(e))
+            print(f"Failed to list models. {e}.")
             return ExitStatus.Failure
         return ExitStatus.Success
 
@@ -276,7 +276,7 @@ class Export(Command):
         try:
             asynclib.run(self._handle(args))
         except Exception as e:
-            print("Failed to export model. {0}".format(e))
+            print(f"Failed to export model. {e}")
             return ExitStatus.Failure
         return ExitStatus.Success
 
@@ -300,6 +300,6 @@ class Status(Command):
             status = asynclib.run(coro)
             print(yaml.dump(status), end="")
         except Exception as e:
-            print("Failed to export model. {0}".format(e))
+            print(f"Failed to export model. {e}")
             return ExitStatus.Failure
         return ExitStatus.Success

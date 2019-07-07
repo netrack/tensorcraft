@@ -2,7 +2,6 @@ import aiohttp.test_utils as aiohttptest
 import aiohttp.web
 import io
 import pathlib
-import tempfile
 import unittest
 
 from polynome import asynclib
@@ -56,11 +55,24 @@ class TestClient(asynctest.AsyncTestCase):
     async def test_remove_not_found(self):
         m = kerastest.new_model()
         path = f"/models/{m.name}/{m.tag}"
-        resp = aiohttp.web.Response(status=404)
+        resp = aiohttp.web.Response(status=404,
+                                    headers={"Error-Code": "Model Not Found"})
 
         async with self.handle_request("DELETE", path, resp) as client:
             with self.assertRaises(errors.NotFoundError):
                 await client.remove(m.name, m.tag)
+
+    @asynctest.unittest_run_loop
+    async def test_remove_latest(self):
+        m = kerastest.new_model()
+        path = f"/models/{m.name}/latest"
+
+        resp = aiohttp.web.Response(status=409,
+                                    headers={"Error-Code": "Model Latest Tag"})
+
+        async with self.handle_request("DELETE", path, resp) as client:
+            with self.assertRaises(errors.LatestTagError):
+                await client.remove(m.name, "latest")
 
     @asynctest.unittest_run_loop
     async def test_status(self):
@@ -75,7 +87,8 @@ class TestClient(asynctest.AsyncTestCase):
     async def test_export_not_found(self):
         m = kerastest.new_model()
         path = f"/models/{m.name}/{m.tag}"
-        resp = aiohttp.web.Response(status=404)
+        resp = aiohttp.web.Response(status=404,
+                                    headers={"Error-Code": "Model Not Found"})
 
         async with self.handle_request("GET", path, resp) as client:
             with self.assertRaises(errors.NotFoundError):
@@ -99,24 +112,22 @@ class TestClient(asynctest.AsyncTestCase):
     async def test_push(self):
         m = kerastest.new_model()
         path = f"/models/{m.name}/{m.tag}"
+        resp = aiohttp.web.Response(status=201)
 
-        async with self.handle_request("PUT", path) as client:
+        async with self.handle_request("PUT", path, resp) as client:
             b = cryptotest.random_bytes()
 
             resp = await client.push(m.name, m.tag, io.BytesIO(b))
             self.assertIsNone(resp)
 
     @asynctest.unittest_run_loop
-    @unittest.skip("error codes are not supported yet")
     async def test_push_latest(self):
-        self.skip()
         m = kerastest.new_model()
         path = f"/models/{m.name}/latest"
-
         resp = aiohttp.web.Response(status=409,
-                                    headers={"Error-Code": 611})
+                                    headers={"Error-Code": "Model Latest Tag"})
 
-        async with self.handle_request("PUT", path) as client:
+        async with self.handle_request("PUT", path, resp) as client:
             with self.assertRaises(errors.LatestTagError):
                 b = cryptotest.random_bytes()
                 resp = await client.push(m.name, "latest", io.BytesIO(b))
@@ -125,12 +136,12 @@ class TestClient(asynctest.AsyncTestCase):
     async def test_push_duplicate(self):
         m = kerastest.new_model()
         path = f"/models/{m.name}/{m.tag}"
-
-        resp = aiohttp.web.Response(status=409)
-        b = cryptotest.random_bytes()
+        resp = aiohttp.web.Response(status=409,
+                                    headers={"Error-Code": "Model Duplicate"})
 
         async with self.handle_request("PUT", path, resp) as client:
             with self.assertRaises(errors.DuplicateError):
+                b = cryptotest.random_bytes()
                 await client.push(m.name, m.tag, io.BytesIO(b))
 
 
