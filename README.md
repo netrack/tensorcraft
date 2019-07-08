@@ -40,7 +40,7 @@ model = keras.Model(inputs=inputs, outputs=outputs, name='3_layer_mlp')
 
 Save it using the `export_saved_model` function from the 2.0 TensorFlow API:
 ```py
-tf.keras.experimental.export_saved_model(model, "3_layer_mlp")
+keras.experimental.export_saved_model(model, "3_layer_mlp")
 ```
 
 ### Starting Server
@@ -105,5 +105,9 @@ to the server looks like this:
 curl -X POST https://localhost:5678/models/3_layer_mlp/0.0.1/predict -d \
     '{"x": [[1.0, 2.1, 1.43, 4.43, 12.1, 3.2, 1.44, 2.3]]}'
 ```
+
+# License
+
+The code and docs are released under the [Apache 2.0 license](LICENSE).
 
 [BuildStatus]:   https://travis-ci.org/netrack/polynome.svg?branch=master
