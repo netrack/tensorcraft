@@ -1,0 +1,24 @@
+name: polynome
+version: git
+version-script: git describe --tags
+
+summary: Server for Keras models
+description: |
+  The Polynome is a HTTP server that serves Keras models using TensorFlow
+  runtime.
+
+base: core18
+grade: devel
+confinement: devmode
+
+parts:
+  polynome:
+    plugin: python
+    python-version: python3
+    source: .
+
+apps:
+  polynome:
+    daemon: simple
+    stop-timeout: 10s
+    command: bin/polynome server
