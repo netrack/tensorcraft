@@ -1,6 +1,6 @@
 # Polynome
 
-[![Build Status][BuildStatus]](https://travis-ci.org/netrack/polynome)
+[![Build Status][BuildStatus]](https://travis-ci.org/netrack/tensorcraft)
 
 The Polynome is a HTTP server that serves [Keras](https://github.com/keras-team/keras)
 models using TensorFlow runtime.
@@ -15,14 +15,14 @@ This server solves such problems as:
 
 Install latest version from pypi repository.
 ```bash
-pip install polynome
+pip install tensorcraft
 ```
 
-## Using polynome
+## Using tensorcraft
 
 ### Keras Requirements
 
-Currently, `polynome` supports only models in the TensorFlow Saved Model, therefore
+Currently, `tensorcraft` supports only models in the TensorFlow Saved Model, therefore
 in order to publish Keras model, it must be saved as Saved Model at first.
 
 Considering the following Keras model:
@@ -47,12 +47,12 @@ keras.experimental.export_saved_model(model, "3_layer_mlp")
 
 To start server run `server` command:
 ```sh
-sudo polynome server
+sudo tensorcraft server
 ```
 
 By default it starts listening _unsecured_ port on localhost at `http://localhost:5678`.
 
-Default configuration saves models to `/var/lib/polynome` directory. Apart of
+Default configuration saves models to `/var/lib/tensorcraft` directory. Apart of
 that server requires access to `/var/run` directory in order to save pid file
 there.
 
@@ -67,14 +67,14 @@ tar -cf 3_layer_mlp.tar 3_layer_mlp
 Now the model packed into the archive can be pushed to the server under the
 arbitrary tag:
 ```sh
-polynome push --name 3_layer_mlp --tag 0.0.1 3_layer_mlp.tar
+tensorcraft push --name 3_layer_mlp --tag 0.0.1 3_layer_mlp.tar
 ```
 
 ### Listing Available Models
 
 You can list all available models on the server using the following command:
 ```sh
-polynome list
+tensorcraft list
 ```
 
 After the execution of `list` command you'll see to available models:
@@ -83,7 +83,7 @@ After the execution of `list` command you'll see to available models:
 3_layer_mlp:latest
 ```
 
-This is the features of `polynome` server, each published model name results in
+This is the features of `tensorcraft` server, each published model name results in
 creation of _model group_. Each model group has it's `latest` tag, that references
 the _latest pushed model_.
 
@@ -91,7 +91,7 @@ the _latest pushed model_.
 
 Remove of the unused model can be performed in using `remove` command:
 ```sh
-polynome remove --name 3_layer_mlp --tag 0.0.1
+tensorcraft remove --name 3_layer_mlp --tag 0.0.1
 ```
 
 Execution of `remove` commands results in the remove of the model itself, and
@@ -99,7 +99,7 @@ the model group, when is is the last model in the group.
 
 ### Using Model
 
-In order to use the pushed model, `polynome` exposes REST API. An example query
+In order to use the pushed model, `tensorcraft` exposes REST API. An example query
 to the server looks like this:
 ```sh
 curl -X POST https://localhost:5678/models/3_layer_mlp/0.0.1/predict -d \
@@ -110,4 +110,4 @@ curl -X POST https://localhost:5678/models/3_layer_mlp/0.0.1/predict -d \
 
 The code and docs are released under the [Apache 2.0 license](LICENSE).
 
-[BuildStatus]:   https://travis-ci.org/netrack/polynome.svg?branch=master
+[BuildStatus]:   https://travis-ci.org/netrack/tensorcraft.svg?branch=master

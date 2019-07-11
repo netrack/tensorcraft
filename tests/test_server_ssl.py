@@ -5,8 +5,8 @@ import unittest
 
 from aiohttp.web import Application
 
-from polynome.server import Server
-from polynome import tlslib
+from tensorcraft.server import Server
+from tensorcraft import tlslib
 from tests import cryptotest
 
 
@@ -35,7 +35,7 @@ class TestServerSSL(aiohttptest.AioHTTPTestCase):
 
         server = await Server.new(
             data_root=data_root,
-            pidfile=data_root.joinpath("polynome.pid"),
+            pidfile=data_root.joinpath("tensorcraft.pid"),
         )
         return server.app
 

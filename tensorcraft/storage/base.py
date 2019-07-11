@@ -4,7 +4,7 @@ import pathlib
 from abc import ABCMeta, abstractmethod
 from typing import Sequence
 
-from polynome.model import Model
+from tensorcraft.model import Model
 
 
 class AbstractStorage(metaclass=ABCMeta):

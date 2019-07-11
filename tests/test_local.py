@@ -5,9 +5,9 @@ import tempfile
 import unittest
 import unittest.mock
 
-from polynome import model
-from polynome.storage.local import FileSystem
-from polynome.storage import metadata
+from tensorcraft import model
+from tensorcraft.storage.local import FileSystem
+from tensorcraft.storage import metadata
 from tests import asynctest
 from tests import kerastest
 

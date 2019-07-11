@@ -1,4 +1,4 @@
-name: polynome
+name: tensorcraft
 version: git
 version-script: git describe --tags
 
@@ -16,13 +16,13 @@ grade: devel
 confinement: devmode
 
 parts:
-  polynome:
+  tensorcraft:
     plugin: python
     python-version: python3
     source: .
 
 apps:
-  polynome:
+  tensorcraft:
     daemon: simple
     stop-timeout: 10s
-    command: bin/polynome server
+    command: bin/tensorcraft server

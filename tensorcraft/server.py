@@ -6,19 +6,19 @@ import pathlib
 import pid
 import semver
 
-import polynome
-import polynome.model
-import polynome.storage.local
+import tensorcraft
+import tensorcraft.model
+import tensorcraft.storage.local
 
 from aiojobs.aiohttp import atomic, setup
 from functools import partial
 from typing import Awaitable
 
-from polynome import arglib
-from polynome import handlers
-from polynome import tlslib
-from polynome.logging import internal_logger
-from polynome.storage import metadata
+from tensorcraft import arglib
+from tensorcraft import handlers
+from tensorcraft import tlslib
+from tensorcraft.logging import internal_logger
+from tensorcraft.storage import metadata
 
 
 class Server:
@@ -29,7 +29,7 @@ class Server:
                   host: str = None, port: str = None,
                   preload: bool = False,
                   close_timeout: int = 10,
-                  strategy: str = polynome.model.Strategy.No.value,
+                  strategy: str = tensorcraft.model.Strategy.No.value,
                   logger: logging.Logger = internal_logger):
         """Create new instance of the server."""
 
@@ -44,15 +44,15 @@ class Server:
 
         # TODO: use different execution strategies for models and
         # fallback to the server-default execution strategy.
-        loader = polynome.model.Loader(strategy=strategy, logger=logger)
+        loader = tensorcraft.model.Loader(strategy=strategy, logger=logger)
 
         # A metadata storage with models details.
         meta = metadata.DB.new(path=data_root)
 
-        storage = polynome.storage.local.FileSystem.new(
+        storage = tensorcraft.storage.local.FileSystem.new(
             path=data_root, meta=meta, loader=loader)
 
-        models = await polynome.model.Cache.new(
+        models = await tensorcraft.model.Cache.new(
             storage=storage, preload=preload)
 
         self.app = aiohttp.web.Application()
@@ -62,7 +62,7 @@ class Server:
         self.app.on_shutdown.append(cls.app_callback(meta.close))
         self.app.on_shutdown.append(cls.app_callback(self.pid.close))
 
-        route = partial(route_to, api_version=polynome.__apiversion__)
+        route = partial(route_to, api_version=tensorcraft.__apiversion__)
 
         models_view = handlers.ModelView(models)
         server_view = handlers.ServerView(models)
@@ -86,7 +86,7 @@ class Server:
         return self
 
     async def _prepare_response(self, request, response):
-        server = "Polynome/{0}".format(polynome.__version__)
+        server = "Polynome/{0}".format(tensorcraft.__version__)
         response.headers["Server"] = server
 
     @classmethod

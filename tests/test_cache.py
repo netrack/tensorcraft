@@ -1,8 +1,8 @@
 import unittest
 import unittest.mock
 
-from polynome.model import Cache
-from polynome.storage.local import FileSystem
+from tensorcraft.model import Cache
+from tensorcraft.storage.local import FileSystem
 from tests import asynctest
 from tests import kerastest
 

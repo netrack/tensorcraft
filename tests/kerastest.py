@@ -7,8 +7,8 @@ import uuid
 
 from collections import namedtuple
 
-from polynome import asynclib
-from polynome import model
+from tensorcraft import asynclib
+from tensorcraft import model
 from tests import cryptotest
 
 

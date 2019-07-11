@@ -1,13 +1,13 @@
 import io
 import json
 
-import polynome
+import tensorcraft
 
 from aiohttp import web
 from typing import Union
 
-from polynome import errors
-from polynome.storage.base import AbstractStorage
+from tensorcraft import errors
+from tensorcraft.storage.base import AbstractStorage
 
 
 _ConflictReason = Union[errors.DuplicateError, errors.LatestTagError]
@@ -139,7 +139,7 @@ class ServerView:
         """Handler that returns server status."""
         return web.json_response(dict(
             models=len([m async for m in self.models.all()]),
-            server_version=polynome.__version__,
-            api_version=polynome.__apiversion__,
+            server_version=tensorcraft.__version__,
+            api_version=tensorcraft.__apiversion__,
             root_path=str(self.models.root_path),
         ))

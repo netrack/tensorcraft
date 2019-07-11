@@ -4,7 +4,7 @@ import pathlib
 import tempfile
 import unittest
 
-from polynome.server import Server
+from tensorcraft.server import Server
 
 
 class TestServerExtra(aiohttptest.AioHTTPTestCase):
@@ -19,8 +19,9 @@ class TestServerExtra(aiohttptest.AioHTTPTestCase):
     async def get_application(self) -> aiohttp.web.Application:
         data_root = pathlib.Path(self.workdir.name).joinpath("non/existing")
 
-        server = await Server.new(data_root=data_root,
-                                  pidfile=data_root.joinpath("polynome.pid"))
+        server = await Server.new(
+            data_root=data_root,
+            pidfile=data_root.joinpath("tensorcraft.pid"))
         return server.app
 
     @aiohttptest.unittest_run_loop

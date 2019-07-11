@@ -6,11 +6,11 @@ import pathlib
 import tarfile
 import yaml
 
-import polynome.errors
+import tensorcraft.errors
 
-from polynome import asynclib
-from polynome.client import Client
-from polynome.shell import termlib
+from tensorcraft import asynclib
+from tensorcraft.client import Client
+from tensorcraft.shell import termlib
 
 
 class ExitStatus(enum.Enum):
@@ -103,11 +103,11 @@ class Server(Command):
         (["--data-root"],
          dict(metavar="PATH",
               help="root directory of persistent state",
-              default="/var/lib/polynome")),
+              default="/var/lib/tensorcraft")),
         (["--pidfile"],
          dict(metavar="PIDFILE",
               help="path to use for daemon pid file",
-              default="/var/run/polynome.pid")),
+              default="/var/run/tensorcraft.pid")),
         (["--strategy"],
          dict(metavar="STRATEGY",
               choices=["mirrored", "multi_worker_mirrored", "no"],
@@ -120,7 +120,7 @@ class Server(Command):
 
     def handle(self, args: argparse.Namespace) -> ExitStatus:
         try:
-            server = importlib.import_module("polynome.server")
+            server = importlib.import_module("tensorcraft.server")
             server.Server.start(**args.__dict__)
         except Exception as e:
             print(f"Failed to start server. {e}.")
@@ -206,7 +206,7 @@ class Remove(Command):
 
         try:
             asynclib.run(coro)
-        except polynome.errors.NotFoundError as e:
+        except tensorcraft.errors.NotFoundError as e:
             if not args.quiet:
                 print(f"{e}")
                 return ExitStatus.Failure

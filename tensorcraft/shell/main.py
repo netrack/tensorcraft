@@ -1,9 +1,9 @@
 import argparse
 import sys
 
-import polynome
+import tensorcraft
 
-from polynome.shell import commands
+from tensorcraft.shell import commands
 
 
 class App:
@@ -22,20 +22,20 @@ class App:
               help="use TLS and verify remove")),
         (["--tlscacert"],
          dict(metavar="TLS_CACERT",
-              default=polynome.homepath.joinpath("cacert.pem"),
+              default=tensorcraft.homepath.joinpath("cacert.pem"),
               help="trust certs signed only by this CA")),
         (["--tlscert"],
          dict(metavar="TLS_CERT",
-              default=polynome.homepath.joinpath("cert.pem"),
+              default=tensorcraft.homepath.joinpath("cert.pem"),
               help="path to TLS certificate file")),
         (["--tlskey"],
          dict(metavar="TLS_KEY",
-              default=polynome.homepath.joinpath("key.pem"),
+              default=tensorcraft.homepath.joinpath("key.pem"),
               help="path to TLS key fine")),
         (["-v", "--version"],
          dict(help="print version and exit",
               action="version",
-              version="%(prog)s {0}".format(polynome.__version__)))]
+              version="%(prog)s {0}".format(tensorcraft.__version__)))]
 
     def __init__(self, prog, modules):
         self.parser = argparse.ArgumentParser(
@@ -59,7 +59,7 @@ class App:
 
 
 def main():
-    a = App(prog="polynome",
+    a = App(prog="tensorcraft",
             modules=[commands.Server,
                      commands.Push,
                      commands.Remove,
