@@ -16,7 +16,7 @@ setuptools.setup(
 
     long_description=long_description,
     long_description_content_type="text/markdown",
-    description="Polynome is a server for Keras models.",
+    description="TensorCraft is a server for Keras models",
 
     url="https://github.com/netrack/tensorcraft",
     author="Yasha Bubnov",
