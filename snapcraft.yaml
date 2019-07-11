@@ -8,7 +8,7 @@ architectures:
 
 summary: Server for Keras models
 description: |
-  The Polynome is a HTTP server that serves Keras models using TensorFlow
+  The TensorCraft is a HTTP server that serves Keras models using TensorFlow
   runtime.
 
 base: core18
