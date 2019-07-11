@@ -1,5 +1,6 @@
 name: polynome
 version: git
+version-script: git describe --tags
 
 summary: Server for Keras models
 description: |
