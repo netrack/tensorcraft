@@ -1,8 +1,8 @@
-# Polynome
+# TensorCraft
 
 [![Build Status][BuildStatus]](https://travis-ci.org/netrack/tensorcraft)
 
-The Polynome is a HTTP server that serves [Keras](https://github.com/keras-team/keras)
+The TensorCraft is a HTTP server that serves [Keras](https://github.com/keras-team/keras)
 models using TensorFlow runtime.
 
 This server solves such problems as:
