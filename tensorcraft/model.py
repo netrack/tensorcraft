@@ -10,11 +10,10 @@ import tensorflow as tf
 import typing
 import uuid
 
-import polynome.logging
-
 from datetime import datetime
 
-from polynome import errors
+from tensorcraft import errors
+from tensorcraft.logging import internal_logger
 
 
 class Strategy(enum.Enum):
@@ -52,7 +51,7 @@ class Loader:
     }
 
     def __init__(self, strategy: str,
-                 logger: logging.Logger = polynome.logging.internal_logger):
+                 logger: logging.Logger = internal_logger):
         if Strategy(strategy) not in self.strategies:
             raise ValueError("unknown strategy {0}".format(strategy))
 
@@ -165,7 +164,7 @@ class Cache:
 
     @classmethod
     async def new(cls, storage, preload: bool = False,
-                  logger: logging.Logger = polynome.logging.internal_logger):
+                  logger: logging.Logger = internal_logger):
         self = cls()
         self.logger = logger
         self.storage = storage

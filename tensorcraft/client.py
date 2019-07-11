@@ -2,12 +2,12 @@ import aiohttp
 import aiohttp.web
 import ssl
 
-import polynome
-import polynome.asynclib
+import tensorcraft
+import tensorcraft.asynclib
 
-from polynome import arglib
-from polynome import errors
-from polynome import tlslib
+from tensorcraft import arglib
+from tensorcraft import errors
+from tensorcraft import tlslib
 
 from typing import Union, Dict, IO
 from urllib.parse import urlparse, urlunparse
@@ -26,7 +26,7 @@ class Client:
     """
 
     default_headers = {"Accept-Version":
-                       ">={0}".format(polynome.__apiversion__)}
+                       ">={0}".format(tensorcraft.__apiversion__)}
 
     def __init__(self, service_url: str,
                  ssl_context: Union[ssl.SSLContext, None] = None):

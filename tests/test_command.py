@@ -5,9 +5,9 @@ import tempfile
 import unittest
 import unittest.mock
 
-from polynome import client
-from polynome import errors
-from polynome.shell import commands
+from tensorcraft import client
+from tensorcraft import errors
+from tensorcraft.shell import commands
 from tests import cryptotest
 from tests import kerastest
 from tests import asynctest

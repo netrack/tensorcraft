@@ -1,4 +1,4 @@
-import polynome
+import tensorcraft
 import os
 import setuptools
 
@@ -11,14 +11,14 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as md:
 
 
 setuptools.setup(
-    name="polynome",
-    version=polynome.__version__,
+    name="tensorcraft",
+    version=tensorcraft.__version__,
 
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="Polynome is a server for Keras models.",
 
-    url="https://github.com/netrack/polynome",
+    url="https://github.com/netrack/tensorcraft",
     author="Yasha Bubnov",
     author_email="girokompass@gmail.com",
 
@@ -47,6 +47,6 @@ setuptools.setup(
     ],
 
     entry_points={
-        "console_scripts": ["polynome = polynome.shell.main:main"],
+        "console_scripts": ["tensorcraft = tensorcraft.shell.main:main"],
     },
 )

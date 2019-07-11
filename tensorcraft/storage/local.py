@@ -6,17 +6,17 @@ import operator
 import pathlib
 import typing
 
-import polynome.logging
+import tensorcraft.logging
 
-from polynome import asynclib
-from polynome import errors
-from polynome import model
-from polynome import signal
-from polynome.storage import base
-from polynome.storage import metadata
-from polynome.storage.metadata import (query_by_name,
-                                       query_by_name_and_tag,
-                                       query_by_id)
+from tensorcraft import asynclib
+from tensorcraft import errors
+from tensorcraft import model
+from tensorcraft import signal
+from tensorcraft.storage import base
+from tensorcraft.storage import metadata
+from tensorcraft.storage.metadata import (query_by_name,
+                                          query_by_name_and_tag,
+                                          query_by_id)
 
 
 class FileSystem(base.AbstractStorage):
@@ -31,7 +31,7 @@ class FileSystem(base.AbstractStorage):
             path: pathlib.Path,
             meta: metadata.DB,
             loader: model.Loader,
-            logger: logging.Logger = polynome.logging.internal_logger):
+            logger: logging.Logger = tensorcraft.logging.internal_logger):
 
         self = cls()
         logger.info("Using file storage backing engine")

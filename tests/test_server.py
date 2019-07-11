@@ -5,8 +5,8 @@ import pathlib
 import tempfile
 import unittest
 
-from polynome import asynclib
-from polynome import server
+from tensorcraft import asynclib
+from tensorcraft import server
 from tests import kerastest
 
 

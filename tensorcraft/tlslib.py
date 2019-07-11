@@ -2,7 +2,7 @@ import logging
 import pathlib
 import ssl
 
-from polynome.logging import internal_logger
+from tensorcraft.logging import internal_logger
 
 
 def create_server_ssl_context(tls: bool = False,

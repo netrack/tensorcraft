@@ -5,7 +5,7 @@ import uuid
 
 from typing import Union, Dict, Sequence
 
-from polynome import asynclib
+from tensorcraft import asynclib
 
 
 class DB:

@@ -4,9 +4,9 @@ import io
 import pathlib
 import unittest
 
-from polynome import asynclib
-from polynome import errors
-from polynome.client import Client
+from tensorcraft import asynclib
+from tensorcraft import errors
+from tensorcraft.client import Client
 from tests import asynctest
 from tests import cryptotest
 from tests import kerastest
