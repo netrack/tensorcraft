@@ -15,19 +15,9 @@ parts:
     plugin: python
     python-version: python3
     source: .
-    #python-packages:
-    #  - aiojobs>=0.2.2
-    #  - aiofiles>=0.4.0
-    #  - aiorwlock>=0.6.0
-    #  - aiohttp>=3.5.4
-    #  - humanize>=0.5.1
-    #  - numpy>=1.16.3
-    #  - pid>=2.2.3
-    #  - pyyaml>=5.1.1
-    #  - semver>=2.8.1
-    #  - tensorflow>=2.0.0a0
-    #  - tinydb>=3.13.0
 
 apps:
   polynome:
-    command: bin/polynome
+    daemon: simple
+    stop-timeout: 10s
+    command: bin/polynome server
