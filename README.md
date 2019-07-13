@@ -17,7 +17,7 @@ This server solves such problems as:
 
 ## Installation
 
-# Installation Using Snap
+### Installation Using Snap
 
 This is the recommended way to install `tensorcraft`. Simply run the following
 command:
@@ -26,7 +26,7 @@ snap install tensorcraft --devmode --edge
 snap start tensorcraft
 ```
 
-# Installation Using Docker
+### Installation Using Docker
 
 TensorCraft can be used as a Docker container. The major note on this approach is
 that `tensorflow` library that is installed into the Docker image is not compiled
@@ -45,7 +45,7 @@ You can optinally specify volume to persist models between restarts of conatiner
 docker run -it -p 5678:5678/tcp -v tensorcraft:/var/run/tensorcraft netrack/tensorcraft
 ```
 
-# Installation Using PyPi
+### Installation Using PyPi
 
 Install latest version from pypi repository.
 ```bash
