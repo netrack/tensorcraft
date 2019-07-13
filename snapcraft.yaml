@@ -1,5 +1,5 @@
 name: tensorcraft
-version: latest
+version: git
 version-script: git describe --tags
 
 architectures:
