@@ -1,9 +1,13 @@
 # TensorCraft
 
 [![Build Status][BuildStatus]](https://travis-ci.org/netrack/tensorcraft)
+[![tensorcraft][SnapCraft]](https://snapcraft.io/tensorcraft)
 
 The TensorCraft is a HTTP server that serves [Keras](https://github.com/keras-team/keras)
 models using TensorFlow runtime.
+
+_Currently TensorCraft is in beta, client and server API may change in the
+future versions_.
 
 This server solves such problems as:
 
@@ -13,12 +17,42 @@ This server solves such problems as:
 
 ## Installation
 
+# Installation Using Snap
+
+This is the recommended way to install `tensorcraft`. Simply run the following
+command:
+```bash
+snap install tensorcraft --devmode --edge
+snap start tensorcraft
+```
+
+# Installation Using Docker
+
+TensorCraft can be used as a Docker container. The major note on this approach is
+that `tensorflow` library that is installed into the Docker image is not compiled
+with support of AVX instructions or GPU.
+```bash
+docker pull netrack/tensorcraft:latest
+```
+
+In order to start the container, run the following command:
+```bash
+docker run -it -p 5678:5678/tcp netrack/tensorcraft
+```
+
+You can optinally specify volume to persist models between restarts of conatiner:
+```bash
+docker run -it -p 5678:5678/tcp -v tensorcraft:/var/run/tensorcraft netrack/tensorcraft
+```
+
+# Installation Using PyPi
+
 Install latest version from pypi repository.
 ```bash
 pip install tensorcraft
 ```
 
-## Using tensorcraft
+## Using TensorCraft
 
 ### Keras Requirements
 
@@ -57,6 +91,10 @@ that server requires access to `/var/run` directory in order to save pid file
 there.
 
 ### Pushing New Model
+
+Note, both client and server of `tensorcraft` application share the same code
+base. This implies the need to install a lot of server dependencies for a
+client. This will be improved in uncoming versions.
 
 Once model saved in directory, pack it using `tar` utility. For instance, this
 is how it will look like for `3_layer_mlp` model from the previous example:
@@ -111,3 +149,4 @@ curl -X POST https://localhost:5678/models/3_layer_mlp/0.0.1/predict -d \
 The code and docs are released under the [Apache 2.0 license](LICENSE).
 
 [BuildStatus]:   https://travis-ci.org/netrack/tensorcraft.svg?branch=master
+[SnapCraft]:     https://snapcraft.io/tensorcraft/badge.svg
