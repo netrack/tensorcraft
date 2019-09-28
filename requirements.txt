@@ -6,6 +6,7 @@ aiorwlock==0.6.0
 astor==0.8.0
 async-timeout==3.0.1
 attrs==19.1.0
+flagparse==0.0.2
 chardet==3.0.4
 cryptography==2.7
 gast==0.2.2

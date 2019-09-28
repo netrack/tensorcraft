@@ -6,7 +6,9 @@ import tensorcraft
 from tensorcraft.shell import commands
 
 
-class App:
+class Command:
+
+    name = "tensorcraft"
 
     arguments = [
         (["-s", "--service-url"],
@@ -37,37 +39,17 @@ class App:
               action="version",
               version="%(prog)s {0}".format(tensorcraft.__version__)))]
 
-    def __init__(self, prog, modules):
-        self.parser = argparse.ArgumentParser(
-            prog=prog, formatter_class=commands.Formatter)
-
-        self.parser.set_defaults(func=self.handle)
-
-        for args, kwargs in self.arguments:
-            self.parser.add_argument(*args, **kwargs)
-
-        subparsers = self.parser.add_subparsers()
-        self.modules = [m(subparsers) for m in modules]
-
-    def handle(self, args: argparse.Namespace) -> commands.ExitStatus:
+    def handle(self, args: argparse.Namespace) -> None:
         self.parser.print_help()
-        return commands.ExitStatus.Failure
-
-    def start(self):
-        args = self.parser.parse_args()
-        return args.func(args=args)
 
 
 def main():
-    a = App(prog="tensorcraft",
-            modules=[commands.Server,
-                     commands.Push,
-                     commands.Remove,
-                     commands.List,
-                     commands.Export,
-                     commands.Status])
-
-    sys.exit(a.start().value)
+    Command([commands.Server,
+             commands.Push,
+             commands.Remove,
+             commands.List,
+             commands.Export,
+             commands.Status]).parse()
 
 
 if __name__ == "__main__":

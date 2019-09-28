@@ -1,6 +1,7 @@
 import aiofiles
 import argparse
 import enum
+import flagparse
 import importlib
 import pathlib
 import tarfile
@@ -13,76 +14,7 @@ from tensorcraft.client import Client
 from tensorcraft.shell import termlib
 
 
-class ExitStatus(enum.Enum):
-    Success = 0
-    Failure = 1
-
-
-class Formatter(argparse.ArgumentDefaultsHelpFormatter):
-    """Format arguments with default values for wide screens.
-
-    Print the usage of the commands to the 140 character terminals.
-    """
-
-    def __init__(self, prog, indent_increment=2, max_help_position=48,
-                 width=140):
-        super().__init__(prog, indent_increment, max_help_position, width)
-
-
-class Command:
-    """Shell sub-command."""
-
-    __attributes__ = [
-        "name",
-        "aliases",
-        "arguments",
-        "help",
-        "description",
-    ]
-
-    def __init__(self, subparsers):
-        # Copy all meta parameters of the command into the __meta__ dictionary,
-        # so it can be accessible during the setup of commands.
-        attrs = {attr: getattr(self, attr, None)
-                 for attr in self.__attributes__}
-
-        self.__meta__ = argparse.Namespace(**attrs)
-        self.subcommands = {}
-
-        self.subparser = subparsers.add_parser(
-            name=self.__meta__.name,
-            help=self.__meta__.help,
-            aliases=(self.__meta__.aliases or []),
-            description=self.__meta__.description,
-            formatter_class=Formatter)
-
-        for args, kwargs in self.__meta__.arguments or []:
-            self.subparser.add_argument(*args, **kwargs)
-
-        # At least print the help message for the command.
-        self.subparser.set_defaults(func=self.handle)
-
-        # Search for sub-classes that represent sub-commands.
-        class_dict = self.__class__.__dict__
-
-        subcommands = filter(lambda o: isinstance(o, type),
-                             class_dict.values())
-
-        subcommands = list(subcommands)
-        if not subcommands:
-            return
-
-        subparsers = self.subparser.add_subparsers(dest=self.__meta__.name)
-        for command_class in subcommands:
-            command = command_class(subparsers)
-            self.subcommands[command_class.__name__] = command
-
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
-        self.subparser.print_help()
-        return ExitStatus.Success
-
-
-class Server(Command):
+class Server(flagparse.SubCommand):
     """Server shell command used to run a server."""
 
     name = "server"
@@ -118,17 +50,15 @@ class Server(Command):
               default=False,
               help="preload all models into the memory before start"))]
 
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
+    def handle(self, args: flagparse.Namespace) -> None:
         try:
             server = importlib.import_module("tensorcraft.server")
             server.Server.start(**args.__dict__)
         except Exception as e:
-            print(f"Failed to start server. {e}.")
-            return ExitStatus.Failure
-        return ExitStatus.Success
+            raise flagparse.ExitError(1, f"Failed to start server. {e}.")
 
 
-class Push(Command):
+class Push(flagparse.SubCommand):
     """Shell command to push model to the server."""
 
     name = "push"
@@ -156,7 +86,7 @@ class Push(Command):
               default=argparse.SUPPRESS,
               help="model location"))]
 
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
+    def handle(self, args: flagparse.Namespace) -> None:
         print(f"loading model {args.name}:{args.tag}")
 
         try:
@@ -173,12 +103,10 @@ class Push(Command):
 
             asynclib.run(coro)
         except Exception as e:
-            print(f"Failed to push model. {e}")
-            return ExitStatus.Failure
-        return ExitStatus.Success
+            raise flagparse.ExitError(1, f"Failed to push model. {e}")
 
 
-class Remove(Command):
+class Remove(flagparse.SubCommand):
     """Shell command to remove the model from server."""
 
     name = "remove"
@@ -200,7 +128,7 @@ class Remove(Command):
               type=str,
               help="model tag"))]
 
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
+    def handle(self, args: flagparse.Namespace) -> None:
         client = Client.new(**args.__dict__)
         coro = client.remove(args.name, args.tag)
 
@@ -208,15 +136,12 @@ class Remove(Command):
             asynclib.run(coro)
         except tensorcraft.errors.NotFoundError as e:
             if not args.quiet:
-                print(f"{e}")
-                return ExitStatus.Failure
+                raise flagparse.ExitError(1, f"{e}")
         except Exception as e:
-            print(f"Failed to remove model. {e}.")
-            return ExitStatus.Failure
-        return ExitStatus.Success
+            raise flagparse.ExitError(1, f"Failed to remove model. {e}.")
 
 
-class List(Command):
+class List(flagparse.SubCommand):
     """Shell command to list models from the server."""
 
     name = "list"
@@ -227,7 +152,7 @@ class List(Command):
 
     arguments = []
 
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
+    def handle(self, args: flagparse.Namespace) -> None:
         client = Client.new(**args.__dict__)
         coro = client.list()
 
@@ -235,12 +160,10 @@ class List(Command):
             for model in asynclib.run(coro):
                 print("{name}:{tag}".format(**model))
         except Exception as e:
-            print(f"Failed to list models. {e}.")
-            return ExitStatus.Failure
-        return ExitStatus.Success
+            raise flagparse.ExitError(1, f"Failed to list models. {e}.")
 
 
-class Export(Command):
+class Export(flagparse.SubCommand):
     """Shell command to export model from the server."""
 
     name = "export"
@@ -268,21 +191,19 @@ class Export(Command):
               default=argparse.SUPPRESS,
               help="file location"))]
 
-    async def _handle(self, args: argparse.Namespace) -> ExitStatus:
+    async def _handle(self, args: flagparse.Namespace) -> None:
         async with aiofiles.open(args.path, "wb+") as writer:
             client = Client.new(**args.__dict__)
             await client.export(args.name, args.tag, writer)
 
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
+    def handle(self, args: flagparse.Namespace) -> None:
         try:
             asynclib.run(self._handle(args))
         except Exception as e:
-            print(f"Failed to export model. {e}")
-            return ExitStatus.Failure
-        return ExitStatus.Success
+            raise flagparse.ExitError(1, f"Failed to export model. {e}")
 
 
-class Status(Command):
+class Status(flagparse.SubCommand):
     """Shell command to retrieve server status information."""
 
     name = "status"
@@ -293,7 +214,7 @@ class Status(Command):
 
     arguments = []
 
-    def handle(self, args: argparse.Namespace) -> ExitStatus:
+    def handle(self, args: flagparse.Namespace) -> None:
         client = Client.new(**args.__dict__)
         coro = client.status()
 
@@ -301,6 +222,4 @@ class Status(Command):
             status = asynclib.run(coro)
             print(yaml.dump(status), end="")
         except Exception as e:
-            print(f"Failed to export model. {e}")
-            return ExitStatus.Failure
-        return ExitStatus.Success
+            raise flagparse.ExitError(1, f"Failed to export model. {e}")

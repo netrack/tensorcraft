@@ -37,6 +37,7 @@ setuptools.setup(
         "aiofiles>=0.4.0",
         "aiorwlock>=0.6.0",
         "aiohttp>=3.5.4",
+        "flagparse>=0.0.2",
         "humanize>=0.5.1",
         "numpy>=1.16.3",
         "pid>=2.2.3",
