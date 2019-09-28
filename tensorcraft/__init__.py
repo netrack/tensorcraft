@@ -1,6 +1,6 @@
 import pathlib
 
-__version__ = "0.0.1b3"
+__version__ = "0.0.1b4"
 __apiversion__ = "1.0.0"
 
 

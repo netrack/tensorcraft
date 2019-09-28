@@ -1,4 +1,4 @@
-import argparse
+import flagparse
 import sys
 
 import tensorcraft
@@ -6,7 +6,7 @@ import tensorcraft
 from tensorcraft.shell import commands
 
 
-class Command:
+class Command(flagparse.Command):
 
     name = "tensorcraft"
 
@@ -39,7 +39,7 @@ class Command:
               action="version",
               version="%(prog)s {0}".format(tensorcraft.__version__)))]
 
-    def handle(self, args: argparse.Namespace) -> None:
+    def handle(self, args: flagparse.Namespace) -> None:
         self.parser.print_help()
 
 
