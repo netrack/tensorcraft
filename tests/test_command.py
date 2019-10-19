@@ -6,22 +6,18 @@ import tempfile
 import unittest
 import unittest.mock
 
-from tensorcraft import client
 from tensorcraft import errors
 from tensorcraft.shell import commands
+from tests import clienttest
 from tests import cryptotest
 from tests import kerastest
 from tests import asynctest
 
 
-def unittest_mock_client(method: str):
-    return unittest.mock.patch.object(client.Client, method,
-                                      new_callable=asynctest.AsyncMagicMock)
-
 
 class TestCommand(unittest.TestCase):
 
-    @unittest_mock_client("list")
+    @clienttest.unittest_mock_client("list")
     @unittest.mock.patch("builtins.print")
     def test_list(self, print_mock, list_mock):
         m = kerastest.new_model()
@@ -31,7 +27,7 @@ class TestCommand(unittest.TestCase):
         command.handle(flagparse.Namespace())
         print_mock.assert_called_with(str(m))
 
-    @unittest_mock_client("remove")
+    @clienttest.unittest_mock_client("remove")
     def test_remove(self, remove_mock):
         m = kerastest.new_model()
 
@@ -39,7 +35,7 @@ class TestCommand(unittest.TestCase):
         command.handle(flagparse.Namespace(name=m.name, tag=m.tag))
         remove_mock.assert_called_with(m.name, m.tag)
 
-    @unittest_mock_client("remove")
+    @clienttest.unittest_mock_client("remove")
     def test_remove_not_found(self, remove_mock):
         m = kerastest.new_model()
         remove_mock.side_effect = errors.NotFoundError(m.name, m.tag)
@@ -51,7 +47,7 @@ class TestCommand(unittest.TestCase):
 
         remove_mock.assert_called_with(m.name, m.tag)
 
-    @unittest_mock_client("remove")
+    @clienttest.unittest_mock_client("remove")
     def test_remove_not_found_quiet(self, remove_mock):
         m = kerastest.new_model()
         remove_mock.side_effect = errors.NotFoundError(m.name, m.tag)
@@ -61,7 +57,7 @@ class TestCommand(unittest.TestCase):
 
         remove_mock.assert_called_with(m.name, m.tag)
 
-    @unittest_mock_client("push")
+    @clienttest.unittest_mock_client("push")
     def test_push(self, push_mock):
         with tempfile.NamedTemporaryFile() as tf:
             with tarfile.open(tf.name, mode="w") as tar:
@@ -74,7 +70,7 @@ class TestCommand(unittest.TestCase):
             command = commands.Push(unittest.mock.Mock())
             command.handle(args)
 
-    @unittest_mock_client("push")
+    @clienttest.unittest_mock_client("push")
     def test_push_file_not_exists(self, push_mock):
         m = kerastest.new_model()
         path = pathlib.Path(cryptotest.random_string())
@@ -85,7 +81,7 @@ class TestCommand(unittest.TestCase):
             command.handle(args)
 
 
-    @unittest_mock_client("export")
+    @clienttest.unittest_mock_client("export")
     def test_export(self, export_mock):
         with tempfile.NamedTemporaryFile() as tf:
             m = kerastest.new_model()
