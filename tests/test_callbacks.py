@@ -15,7 +15,7 @@ class TestCallbacks(asynctest.AsyncTestCase):
         cb = callbacks.ModelCheckpoint(verbose=1)
 
         model = tf.keras.models.Sequential()
-        model.add(tf.keras.layers.Activation("tanh"))
+        model.add(tf.keras.layers.Dense(1, input_shape=(1,)))
         model.compile(optimizer="sgd", loss="binary_crossentropy")
 
         x, y = np.array([[1.0]]), np.array([[1.0]])
