@@ -51,7 +51,16 @@ class ModelCheckpoint(callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None) -> None:
         with tempfile.TemporaryDirectory() as td:
             modelpath = pathlib.Path(td, "model")
-            keras.experimental.export_saved_model(self.model, str(modelpath))
+
+            # Pure keras models (in contrast with tf.keras), must be saved
+            # into h5 format first and loaded using tf model loader.
+            h5path = modelpath.with_suffix(".h5")
+            self.model.save(h5path)
+
+            # Now this model can be translated into tf entities and saved
+            # into the serving format.
+            model = keras.models.load_model(h5path)
+            keras.experimental.export_saved_model(model, str(modelpath))
 
             tarpath = modelpath.with_suffix(".tar")
             with tarfile.open(str(tarpath), mode="w") as tar:
@@ -59,6 +68,7 @@ class ModelCheckpoint(callbacks.Callback):
 
             asyncreader = asynclib.reader(tarpath)
 
+            # Use explicit name when set, use generated model name instead.
             name = self.name or self.model.name
             tag = semver.bump_build(self.tag)
 
