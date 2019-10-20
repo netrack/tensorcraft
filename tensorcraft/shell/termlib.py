@@ -22,6 +22,7 @@ async def async_progress(path: pathlib.Path, reader: Coroutine) -> bytes:
     async for chunk in reader:
         yield chunk
         loaded += len(chunk)
+        progress(loaded, total)
 
     progress(loaded, total)
     print("", flush=True)

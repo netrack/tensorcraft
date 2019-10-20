@@ -55,7 +55,7 @@ class Server:
         models = await tensorcraft.model.Cache.new(
             storage=storage, preload=preload)
 
-        self.app = aiohttp.web.Application()
+        self.app = aiohttp.web.Application(client_max_size=1024**10)
 
         self.app.on_startup.append(cls.app_callback(self.pid.create))
         self.app.on_response_prepare.append(self._prepare_response)
