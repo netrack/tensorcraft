@@ -1,5 +1,6 @@
 import aiohttp
 import aiohttp.web
+import numpy
 import ssl
 
 import tensorcraft
@@ -11,6 +12,12 @@ from tensorcraft import tlslib
 
 from typing import Union, Dict, IO
 from urllib.parse import urlparse, urlunparse
+
+
+def new(**kwargs):
+    """A helper function to create a new instace of a client."""
+    args = arglib.filter_callable_arguments(Client.__init__, **kwargs)
+    return Client(**args)
 
 
 class Client:
@@ -31,7 +38,7 @@ class Client:
     def __init__(self, service_url: str,
                  ssl_context: Union[ssl.SSLContext, None] = None):
 
-        # Change the protocol to "HTTPS" if SSL context is given.
+       # Change the protocol to "HTTPS" if SSL context is given.
         if ssl_context:
             url = urlparse(service_url)
             _, *parts = url
@@ -108,6 +115,25 @@ class Client:
                 raise error_class(name, tag)
 
             await writer.write(await resp.read())
+
+    async def predict(self, name: str, tag: str,
+                      x_pred: Union[numpy.array, list]) -> numpy.array:
+        """Feed X array to the given model and retrieve prediction."""
+        async with aiohttp.ClientSession() as session:
+            url = ("{0}/models/{1}/{2}/predict".
+                   format(self.service_url, name, tag))
+
+            async with session.post(url,
+                                    json=dict(x=x_pred),
+                                    headers=self.default_headers,
+                                    ssl_context=self.ssl_context) as resp:
+
+                error_class = self.make_error_from_response(resp)
+                if error_class:
+                    raise error_class(name, tag)
+
+                resp_data = await resp.json()
+                return numpy.array(resp_data.get("y"))
 
     async def status(self) -> Dict[str, str]:
         async with aiohttp.ClientSession() as session:
