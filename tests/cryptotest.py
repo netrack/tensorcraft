@@ -1,5 +1,6 @@
 import datetime
 import math
+import numpy
 import pathlib
 import random
 import string
@@ -24,6 +25,10 @@ def random_bytes(length=1024):
 
 def random_dict(items=10):
     return {random_string(): random_string() for _ in range(items)}
+
+
+def random_array(length=10) -> list:
+    return numpy.random.uniform(0, 1, size=length).tolist()
 
 
 def create_self_signed_cert(path: pathlib.Path) -> Tuple[pathlib.Path,

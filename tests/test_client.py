@@ -1,6 +1,7 @@
 import aiohttp.test_utils as aiohttptest
 import aiohttp.web
 import io
+import numpy
 import pathlib
 import unittest
 
@@ -107,6 +108,20 @@ class TestClient(asynctest.AsyncTestCase):
             await client.export(m.name, m.tag, asynclib.AsyncIO(writer))
 
             self.assertEqual(want_value, writer.getvalue())
+
+    @asynctest.unittest_run_loop
+    async def test_predict(self):
+        m = kerastest.new_model()
+        path = f"/models/{m.name}/{m.tag}/predict"
+
+        y_true = [cryptotest.random_array()]
+        resp = aiohttp.web.json_response(data=dict(y=y_true))
+
+        async with self.handle_request("POST", path, resp) as client:
+            x_pred = cryptotest.random_array()
+            y_pred = await client.predict(m.name, m.tag, [x_pred])
+
+            self.assertTrue(numpy.array_equal(y_true, y_pred))
 
     @asynctest.unittest_run_loop
     async def test_push(self):
