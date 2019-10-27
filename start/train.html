@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Getting Started · GitBook</title>
+        <title>Saving Keras Model During Training · GitBook</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -57,10 +57,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="train.html" />
     
-    
-    <link rel="prev" href="../" />
+    <link rel="prev" href="./" />
     
 
     </head>
@@ -102,7 +100,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="1.2" data-path="./">
+        <li class="chapter " data-level="1.2" data-path="./">
             
                 <a href="./">
             
@@ -116,7 +114,7 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="1.2.1" data-path="train.html">
+        <li class="chapter active" data-level="1.2.1" data-path="train.html">
             
                 <a href="train.html">
             
@@ -164,7 +162,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Getting Started</a>
+        <a href=".." >Saving Keras Model During Training</a>
     </h1>
 </div>
 
@@ -179,12 +177,18 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="overview">Overview</h1>
-<p>This walkthrough will take you through all of the basic of using TensorCraft.
-Within this section, you will learn how to setup TensorCraft server and deploy
-your models during traing and inference steps.</p>
-<h1 id="whats-next">What&apos;s next?</h1>
-<p>TBD</p>
+                                <h1 id="saving-keras-model-during-training">Saving Keras Model During Training</h1>
+<p>One of the possible ways of using <code>tensorcraft</code> is publising model snapshots to
+the server on each epoch end.</p>
+<pre><code class="lang-py"><span class="hljs-keyword">from</span> keras.models <span class="hljs-keyword">import</span> Sequential
+<span class="hljs-keyword">from</span> keras.layers <span class="hljs-keyword">import</span> Dense, Activation
+<span class="hljs-keyword">from</span> tensorcraft.callbacks <span class="hljs-keyword">import</span> ModelCheckpoint
+model = keras.Sequential()
+model.add(Dense(<span class="hljs-number">32</span>, input_dim=<span class="hljs-number">784</span>))
+model.add(Activation(<span class="hljs-string">&apos;relu&apos;</span>))
+model.compile(optimizer=<span class="hljs-string">&apos;sgd&apos;</span>, loss=<span class="hljs-string">&apos;binary_crossentropy&apos;</span>)
+model.fit(x_train, y_train, callbacks=[ModelCheckpoint(verbose=<span class="hljs-number">1</span>)], epochs=<span class="hljs-number">100</span>)
+</code></pre>
 
                                 
                                 </section>
@@ -212,14 +216,10 @@ your models during traing and inference steps.</p>
 
             
                 
-                <a href="../" class="navigation navigation-prev " aria-label="Previous page: TensorCraft Documentation">
+                <a href="./" class="navigation navigation-prev navigation-unique" aria-label="Previous page: Getting Started">
                     <i class="fa fa-angle-left"></i>
                 </a>
                 
-                
-                <a href="train.html" class="navigation navigation-next " aria-label="Next page: Saving Keras Model During Training">
-                    <i class="fa fa-angle-right"></i>
-                </a>
                 
             
         
@@ -228,7 +228,7 @@ your models during traing and inference steps.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Getting Started","level":"1.2","depth":1,"next":{"title":"Saving Keras Model During Training","level":"1.2.1","depth":2,"path":"start/train.md","ref":"start/train.md","articles":[]},"previous":{"title":"TensorCraft Documentation","level":"1.1","depth":1,"path":"README.md","ref":"README.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"start/README.md","mtime":"2019-10-27T11:53:24.785Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2019-10-27T12:05:03.429Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Saving Keras Model During Training","level":"1.2.1","depth":2,"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start/README.md","ref":"start/README.md","articles":[{"title":"Saving Keras Model During Training","level":"1.2.1","depth":2,"path":"start/train.md","ref":"start/train.md","articles":[]}]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"start/train.md","mtime":"2019-10-27T11:53:37.252Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2019-10-27T12:05:03.429Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
