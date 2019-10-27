@@ -27,7 +27,7 @@ setuptools.setup(
       "License :: OSI Approved :: MIT License",
     ],
 
-    packages=setuptools.find_packages(exclude=["tests"]),
+    packages=setuptools.find_packages(exclude=["tests", "readme", "docs"]),
     tests_require=[
         "pytest-aiohttp>=0.3.0",
         "cryptography>=2.7",
