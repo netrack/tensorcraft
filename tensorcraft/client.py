@@ -14,12 +14,6 @@ from typing import Union, Dict, IO
 from urllib.parse import urlparse, urlunparse
 
 
-def new(**kwargs):
-    """A helper function to create a new instace of a client."""
-    args = arglib.filter_callable_arguments(Client.__init__, **kwargs)
-    return Client(**args)
-
-
 class Client:
     """A client to do basic operations remotely
 
@@ -38,7 +32,7 @@ class Client:
     def __init__(self, service_url: str,
                  ssl_context: Union[ssl.SSLContext, None] = None):
 
-       # Change the protocol to "HTTPS" if SSL context is given.
+        # Change the protocol to "HTTPS" if SSL context is given.
         if ssl_context:
             url = urlparse(service_url)
             _, *parts = url

@@ -14,8 +14,8 @@ class ModelCheckpoint(callbacks.Callback):
     """Publish model to server after every epoch.
 
     Args:
-        name -- name of the model, when name is not given, name attribute of the
-                model will be used
+        name -- name of the model, when name is not given, name attribute of
+                the model will be used
         tag -- tag of the model, by default is "0.0.0", every iteration will
                bump build version, so on the next epoch version will be
                "0.0.0+build1"; tag must be valid semantic version
