@@ -29,9 +29,9 @@ def query_by_name(name: str):
     return tinydb.Query().name == name
 
 
-def query_by_id(id: uuid.UUID):
+def query_by_id(uid: uuid.UUID):
     """Query the document by unique identifier."""
-    return tinydb.Query().id == id
+    return tinydb.Query().id == uid
 
 
 class FsMetadata:

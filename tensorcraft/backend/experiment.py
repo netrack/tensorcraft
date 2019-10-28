@@ -19,9 +19,9 @@ class Experiment:
         return cls(id=experiment_id, name=name)
 
     def __init__(self,
-                 id: Union[uuid.UUID, str],
+                 uid: Union[uuid.UUID, str],
                  name: str):
-        self.id = uuid.UUID(str(id))
+        self.id = uuid.UUID(str(uid))
         self.name = name
 
 

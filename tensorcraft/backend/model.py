@@ -104,10 +104,10 @@ class Model:
                     tag=self.tag,
                     created_at=self.created_at)
 
-    def __init__(self, id: Union[uuid.UUID, str],
+    def __init__(self, uid: Union[uuid.UUID, str],
                  name: str, tag: str, created_at: float,
                  path: str = None, loader: Loader = None):
-        self.id = uuid.UUID(str(id))
+        self.id = uuid.UUID(str(uid))
         self.name = name
         self.tag = tag
         self.created_at = created_at
@@ -171,7 +171,6 @@ class AbstractStorage(metaclass=ABCMeta):
         Returns:
             A list of callbacks as :class:`tensorcraft.signal.Signal`.
         """
-        pass
 
     @property
     @abstractmethod
@@ -184,7 +183,6 @@ class AbstractStorage(metaclass=ABCMeta):
         Returns:
             A list of callbacks as :class:`tensorcraft.signal.Signal`.
         """
-        pass
 
     @property
     @abstractmethod
@@ -197,7 +195,6 @@ class AbstractStorage(metaclass=ABCMeta):
         Returns:
             Data root path as :class:`pathlib.Path`.
         """
-        pass
 
     @abstractmethod
     async def all(self) -> Sequence[Model]:
@@ -209,7 +206,6 @@ class AbstractStorage(metaclass=ABCMeta):
         Returns:
             Sequence of :class:`Model`.
         """
-        pass
 
     @abstractmethod
     async def save(self, name: str, tag: str, stream: io.IOBase) -> Model:
@@ -224,7 +220,6 @@ class AbstractStorage(metaclass=ABCMeta):
         Returns:
             Saved instance of :class:`Model`.
         """
-        pass
 
     @abstractmethod
     async def delete(self, name: str, tag: str) -> None:
@@ -236,7 +231,6 @@ class AbstractStorage(metaclass=ABCMeta):
             name (str): Model name.
             tag (str): Model tag.
         """
-        pass
 
     @abstractmethod
     async def load(self, name: str, tag: str) -> Model:
@@ -252,7 +246,6 @@ class AbstractStorage(metaclass=ABCMeta):
         Returns:
             Loaded :class:`Model`.
         """
-        pass
 
     @abstractmethod
     async def export(self, name: str, tag: str, writer: io.IOBase) -> None:
@@ -266,7 +259,6 @@ class AbstractStorage(metaclass=ABCMeta):
             tag (str): Model tag
             writer (io.IOBase): Destination writer instance.
         """
-        pass
 
 
 class Cache:
