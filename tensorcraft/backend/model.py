@@ -94,7 +94,7 @@ class Model:
         model_path = root.joinpath(model_id.hex)
         model_created_at = datetime.utcnow().timestamp()
 
-        return cls(id=model_id, name=name, tag=tag,
+        return cls(uid=model_id, name=name, tag=tag,
                    created_at=model_created_at,
                    path=model_path, loader=loader)
 

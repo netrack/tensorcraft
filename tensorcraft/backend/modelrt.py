@@ -12,6 +12,7 @@ import tensorcraft.logging
 
 from typing import Dict, Coroutine, Sequence, Union
 
+from tensorcraft import arglib
 from tensorcraft import asynclib
 from tensorcraft import errors
 from tensorcraft import signal
@@ -134,9 +135,10 @@ class FsStorage(model.AbstractStorage):
     def root_path(self) -> pathlib.Path:
         return self.models_path
 
-    def build_model_from_document(self, document: Dict) -> model.Model:
-        path = self.models_path.joinpath(document["id"])
-        return model.Model(path=path, loader=self.loader, **document)
+    def build_model_from_document(self, doc: Dict) -> model.Model:
+        path = self.models_path.joinpath(doc["id"])
+        d = arglib.filter_callable_arguments(model.Model, uid=doc["id"], **doc)
+        return model.Model(path=path, loader=self.loader, **d)
 
     def await_in_thread(self, coro: Coroutine):
         """Run the given function within an instance executor."""
@@ -150,9 +152,7 @@ class FsStorage(model.AbstractStorage):
         them (e.g. for prediction), models must be loaded.
         """
         for document in await self.meta.all():
-            path = self.models_path.joinpath(document["id"])
-            m = model.Model(path=path, loader=self.loader, **document)
-            yield m
+            yield self.build_model_from_document(document)
 
     async def save_to_meta(self, m: model.Model) -> None:
         async with self.meta.write_locked() as meta:
