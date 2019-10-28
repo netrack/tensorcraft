@@ -7,7 +7,7 @@ from aiohttp import web
 from typing import Union
 
 from tensorcraft import errors
-from tensorcraft.storage.base import AbstractStorage
+from tensorcraft.backend import model
 
 
 _ConflictReason = Union[errors.DuplicateError, errors.LatestTagError]
@@ -45,7 +45,7 @@ class ModelView:
         models -- container of models
     """
 
-    def __init__(self, models: AbstractStorage) -> None:
+    def __init__(self, models: model.AbstractStorage) -> None:
         self.models = models
 
     async def save(self, req: web.Request) -> web.Response:
@@ -127,19 +127,3 @@ class ModelView:
             return web.Response(body=writer.getvalue())
         except errors.NotFoundError as e:
             raise make_not_found_response(reason=e)
-
-
-class ServerView:
-    """Server view to handle actions related to server."""
-
-    def __init__(self, models: AbstractStorage) -> None:
-        self.models = models
-
-    async def status(self, req: web.Request) -> web.Response:
-        """Handler that returns server status."""
-        return web.json_response(dict(
-            models=len([m async for m in self.models.all()]),
-            server_version=tensorcraft.__version__,
-            api_version=tensorcraft.__apiversion__,
-            root_path=str(self.models.root_path),
-        ))

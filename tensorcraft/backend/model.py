@@ -7,12 +7,14 @@ import logging
 import numpy
 import pathlib
 import tensorflow as tf
-import typing
 import uuid
 
+from abc import ABCMeta, abstractmethod
 from datetime import datetime
+from typing import Sequence, Union
 
 from tensorcraft import errors
+from tensorcraft import signal
 from tensorcraft.logging import internal_logger
 
 
@@ -61,7 +63,7 @@ class Loader:
         self.logger = logger
         self.strategy = strategy_class()
 
-    def load(self, path: typing.Union[str, pathlib.Path]):
+    def load(self, path: Union[str, pathlib.Path]):
         """Load the model by the given path."""
         with self.strategy.scope():
             m = tf.keras.experimental.load_from_saved_model(str(path))
@@ -102,7 +104,7 @@ class Model:
                     tag=self.tag,
                     created_at=self.created_at)
 
-    def __init__(self, id: typing.Union[uuid.UUID, str],
+    def __init__(self, id: Union[uuid.UUID, str],
                  name: str, tag: str, created_at: float,
                  path: str = None, loader: Loader = None):
         self.id = uuid.UUID(str(id))
@@ -155,15 +157,129 @@ class Model:
         return "{0}:{1}".format(self.name, self.tag)
 
 
+class AbstractStorage(metaclass=ABCMeta):
+    """Storage used to persist model (a TAR archive)."""
+
+    @property
+    @abstractmethod
+    def on_save(self) -> signal.Signal:
+        """A list of saving callbacks.
+
+        Each callback in the list will be executed asynchronously on model
+        saving.
+
+        Returns:
+            A list of callbacks as :class:`tensorcraft.signal.Signal`.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def on_delete(self) -> signal.Signal:
+        """A list of deletion callbacks.
+
+        Each callback in the list will be executed asynchronously on model
+        deletion.
+
+        Returns:
+            A list of callbacks as :class:`tensorcraft.signal.Signal`.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    async def root_path(self) -> pathlib.Path:
+        """Root path of the storage.
+
+        The returned path specifies the path where all models and related
+        metadata is persisted.
+
+        Returns:
+            Data root path as :class:`pathlib.Path`.
+        """
+        pass
+
+    @abstractmethod
+    async def all(self) -> Sequence[Model]:
+        """List all existing models.
+
+        The returned models are not necessary loaded for the sake of
+        performance.
+
+        Returns:
+            Sequence of :class:`Model`.
+        """
+        pass
+
+    @abstractmethod
+    async def save(self, name: str, tag: str, stream: io.IOBase) -> Model:
+        """Save the model archive.
+
+        The persistence guarantee is provided by the implementation.
+
+        Args:
+            name (str): Model name.
+            tag (str): Model tag.
+
+        Returns:
+            Saved instance of :class:`Model`.
+        """
+        pass
+
+    @abstractmethod
+    async def delete(self, name: str, tag: str) -> None:
+        """Delete the model.
+
+        After the deletion model should not be addressable anymore.
+
+        Args:
+            name (str): Model name.
+            tag (str): Model tag.
+        """
+        pass
+
+    @abstractmethod
+    async def load(self, name: str, tag: str) -> Model:
+        """Load the model.
+
+        Load model into the memory from the storage. Implementation must
+        consider concurrent requests to load the same model.
+
+        Args:
+            name (str): Model name.
+            tag (str): Model tag.
+
+        Returns:
+            Loaded :class:`Model`.
+        """
+        pass
+
+    @abstractmethod
+    async def export(self, name: str, tag: str, writer: io.IOBase) -> None:
+        """Export model to the writer
+
+        Write model's archive into the stream. Implementation must consider
+        concurrent requests to export the same model.
+
+        Args:
+            name (str): Model name
+            tag (str): Model tag
+            writer (io.IOBase): Destination writer instance.
+        """
+        pass
+
+
 class Cache:
-    """Cache of models, speeds up the load of models.
+    """Cache of models used to speeds up models loading time.
 
     Cache saves models into the in-memory cache and delegates calls
     to the parent storage when the model is not found locally.
     """
 
     @classmethod
-    async def new(cls, storage, preload: bool = False,
+    async def new(cls,
+                  storage: AbstractStorage,
+                  preload: bool = False,
                   logger: logging.Logger = internal_logger):
         self = cls()
         self.logger = logger
@@ -187,7 +303,7 @@ class Cache:
     def root_path(self) -> pathlib.Path:
         return self.storage.root_path
 
-    async def all(self) -> typing.Sequence[Model]:
+    async def all(self) -> Sequence[Model]:
         """List all available models.
 
         The call puts all retrieved models into the cache. All that models are

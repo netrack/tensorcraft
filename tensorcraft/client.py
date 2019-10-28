@@ -14,12 +14,6 @@ from typing import Union, Dict, IO
 from urllib.parse import urlparse, urlunparse
 
 
-def new(**kwargs):
-    """A helper function to create a new instace of a client."""
-    args = arglib.filter_callable_arguments(Client.__init__, **kwargs)
-    return Client(**args)
-
-
 class Client:
     """A client to do basic operations remotely
 

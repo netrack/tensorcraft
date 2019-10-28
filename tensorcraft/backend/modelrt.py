@@ -1,25 +1,95 @@
+import aiorwlock
 import asyncio
 import concurrent.futures
 import io
 import logging
 import operator
 import pathlib
-import typing
+import tinydb
+import uuid
 
 import tensorcraft.logging
 
+from typing import Dict, Coroutine, Sequence, Union
+
 from tensorcraft import asynclib
 from tensorcraft import errors
-from tensorcraft import model
 from tensorcraft import signal
-from tensorcraft.storage import base
-from tensorcraft.storage import metadata
-from tensorcraft.storage.metadata import (query_by_name,
-                                          query_by_name_and_tag,
-                                          query_by_id)
+from tensorcraft.backend import model
 
 
-class FileSystem(base.AbstractStorage):
+def query_by_name_and_tag(name: str, tag: str):
+    """Query documents by name and tag."""
+    q = tinydb.Query()
+    return (q.name == name) & (q.tag == tag)
+
+
+def query_by_name(name: str):
+    """Query documents by name."""
+    return tinydb.Query().name == name
+
+
+def query_by_id(id: uuid.UUID):
+    """Query the document by unique identifier."""
+    return tinydb.Query().id == id
+
+
+class FsMetadata:
+    """A file-based database with JSON encoding for models metadata."""
+
+    @classmethod
+    def new(cls, path: pathlib.Path):
+        self = cls()
+        self._rw_lock = aiorwlock.RWLock()
+        self._db = tinydb.TinyDB(path=path.joinpath("metadata.json"),
+                                 default_table="metadata")
+        return self
+
+    async def close(self) -> None:
+        async with self._rw_lock.writer_lock:
+            self._db.close()
+
+    async def get(self, cond) -> Dict:
+        async with self._rw_lock.reader_lock:
+            return self._db.get(cond)
+
+    async def search(self, cond) -> Dict:
+        async with self._rw_lock.reader_lock:
+            return self._db.search(cond)
+
+    async def all(self) -> Sequence[Dict]:
+        async with self._rw_lock.reader_lock:
+            return self._db.all()
+
+    async def insert(self, document: Dict) -> None:
+        async with self._rw_lock.writer_lock:
+            self._db.insert(document)
+
+    async def upsert(self, document: Dict, cond) -> None:
+        async with self._rw_lock.writer_lock:
+            self._db.upsert(document, cond)
+
+    async def remove(self, cond) -> None:
+        async with self._rw_lock.writer_lock:
+            self._db.remove(cond)
+
+    async def latest(self, cond, key) -> Union[Dict, None]:
+        async with self._rw_lock.reader_lock:
+            documents = self._db.search(cond)
+
+            sorted(documents, key=key)
+            return documents.pop() if documents else None
+
+    @asynclib.asynccontextmanager
+    async def write_locked(self):
+        async with self._rw_lock.writer_lock:
+            db = FsMetadata()
+            db._db = self._db
+            db._rw_lock = aiorwlock.RWLock(fast=True)
+            yield db
+
+
+class FsStorage(model.AbstractStorage):
     """Storage of models based on ordinary file system.
 
     Implementation saves the models as unpacked TensorFlow SaveModel
@@ -29,16 +99,15 @@ class FileSystem(base.AbstractStorage):
     @classmethod
     def new(cls,
             path: pathlib.Path,
-            meta: metadata.DB,
             loader: model.Loader,
             logger: logging.Logger = tensorcraft.logging.internal_logger):
 
         self = cls()
         logger.info("Using file storage backing engine")
 
-        self.meta = meta
         self.logger = logger
         self.loader = loader
+        self.meta = FsMetadata.new(path)
         self.models_path = path.joinpath("models")
 
         self._on_delete = signal.Signal()
@@ -48,6 +117,10 @@ class FileSystem(base.AbstractStorage):
         self.executor = concurrent.futures.ThreadPoolExecutor()
 
         return self
+
+    async def close(self) -> None:
+        """Clean-up resources allocated by storage."""
+        await self.meta.close()
 
     @property
     def on_delete(self) -> signal.Signal:
@@ -61,16 +134,16 @@ class FileSystem(base.AbstractStorage):
     def root_path(self) -> pathlib.Path:
         return self.models_path
 
-    def build_model_from_document(self, document: typing.Dict) -> model.Model:
+    def build_model_from_document(self, document: Dict) -> model.Model:
         path = self.models_path.joinpath(document["id"])
         return model.Model(path=path, loader=self.loader, **document)
 
-    def await_in_thread(self, coro: typing.Coroutine):
+    def await_in_thread(self, coro: Coroutine):
         """Run the given function within an instance executor."""
         loop = asyncio.get_event_loop()
         return loop.run_in_executor(self.executor, asynclib.run, coro)
 
-    async def all(self) -> typing.Sequence[model.Model]:
+    async def all(self) -> Sequence[model.Model]:
         """List available models and their tags.
 
         The method returns a list of not loaded models, therefore before using

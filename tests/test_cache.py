@@ -1,8 +1,7 @@
 import unittest
 import unittest.mock
 
-from tensorcraft.model import Cache
-from tensorcraft.storage.local import FileSystem
+from tensorcraft.backend.model import Cache, AbstractStorage
 from tests import asynctest
 from tests import kerastest
 
@@ -10,7 +9,7 @@ from tests import kerastest
 class TestCache(asynctest.AsyncTestCase):
 
     async def setUpAsync(self) -> None:
-        self.storage = unittest.mock.create_autospec(FileSystem)
+        self.storage = unittest.mock.create_autospec(AbstractStorage)
 
     @asynctest.unittest_run_loop
     async def test_all(self):

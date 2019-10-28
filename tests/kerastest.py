@@ -8,7 +8,7 @@ import uuid
 from collections import namedtuple
 
 from tensorcraft import asynclib
-from tensorcraft import model
+from tensorcraft.backend import model
 from tests import cryptotest
 
 
