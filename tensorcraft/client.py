@@ -32,7 +32,7 @@ class Client:
     def __init__(self, service_url: str,
                  ssl_context: Union[ssl.SSLContext, None] = None):
 
-       # Change the protocol to "HTTPS" if SSL context is given.
+        # Change the protocol to "HTTPS" if SSL context is given.
         if ssl_context:
             url = urlparse(service_url)
             _, *parts = url

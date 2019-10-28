@@ -1,5 +1,4 @@
 import flagparse
-import sys
 
 import tensorcraft
 

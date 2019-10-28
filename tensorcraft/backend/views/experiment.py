@@ -3,7 +3,7 @@ from aiohttp import web
 
 class ExperimentView:
     """View to handle actions related to experiments.
-    
+
     Attributes:
         experiments -- container of experiments.
     """

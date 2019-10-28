@@ -14,7 +14,7 @@ from typing import Awaitable
 
 from tensorcraft import arglib
 from tensorcraft import tlslib
-from tensorcraft.backend import views 
+from tensorcraft.backend import views
 from tensorcraft.backend import model
 from tensorcraft.backend import modelrt
 from tensorcraft.logging import internal_logger

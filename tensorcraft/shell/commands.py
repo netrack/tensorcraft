@@ -1,6 +1,5 @@
 import aiofiles
 import argparse
-import enum
 import flagparse
 import importlib
 import pathlib

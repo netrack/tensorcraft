@@ -1,8 +1,6 @@
 import io
 import json
 
-import tensorcraft
-
 from aiohttp import web
 from typing import Union
 

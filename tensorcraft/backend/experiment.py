@@ -6,7 +6,7 @@ from typing import Union
 
 class Experiment:
     """Machine-learning experiment.
-    
+
     Attributes:
         id -- unique experiment identifier
         name -- name of the experiment
