@@ -61,17 +61,18 @@ class Server:
         server_view = views.ServerView(models)
 
         self.app.add_routes([
-            aiohttp.web.put(
-                "/models/{name}/{tag}", route(models_view.save)),
-            aiohttp.web.get(
-                "/models/{name}/{tag}", route(models_view.export)),
-            aiohttp.web.delete(
-                "/models/{name}/{tag}", route(models_view.delete)),
-            aiohttp.web.post(
-                "/models/{name}/{tag}/predict", route(models_view.predict)),
+            # Model-related endpoints.
+            aiohttp.web.get(models_view.list.url, route(models_view.list)),
+            aiohttp.web.put(models_view.save.url, route(models_view.save)),
+            aiohttp.web.get(models_view.export.url, route(models_view.export)),
+            aiohttp.web.delete(models_view.delete.url,
+                               route(models_view.delete)),
+            aiohttp.web.post(models_view.predict.url,
+                             route(models_view.predict)),
 
-            aiohttp.web.get("/models", route(models_view.list)),
-            aiohttp.web.get("/status", route(server_view.status))])
+            # Server-related endpoints.
+            aiohttp.web.get(server_view.status.url, route(server_view.status)),
+        ])
 
         setup(self.app)
         logger.info("Server initialization completed")
@@ -79,7 +80,7 @@ class Server:
         return self
 
     async def _prepare_response(self, request, response):
-        server = "Polynome/{0}".format(tensorcraft.__version__)
+        server = "TensorCraft/{0}".format(tensorcraft.__version__)
         response.headers["Server"] = server
 
     @classmethod

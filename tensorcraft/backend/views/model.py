@@ -6,6 +6,7 @@ from typing import Union
 
 from tensorcraft import errors
 from tensorcraft.backend import model
+from tensorcraft.backend.views import routing
 
 
 _ConflictReason = Union[errors.DuplicateError, errors.LatestTagError]
@@ -46,6 +47,7 @@ class ModelView:
     def __init__(self, models: model.AbstractStorage) -> None:
         self.models = models
 
+    @routing.urlto("/models/{name}/{tag}")
     async def save(self, req: web.Request) -> web.Response:
         """HTTP handler to save the model.
 
@@ -66,6 +68,7 @@ class ModelView:
 
         return web.Response(status=web.HTTPCreated.status_code)
 
+    @routing.urlto("/models/{name}/{tag}/predict")
     async def predict(self, req: web.Request) -> web.Response:
         """HTTP handler to calculate model predictions.
 
@@ -92,6 +95,7 @@ class ModelView:
 
         return web.json_response(dict(y=predictions))
 
+    @routing.urlto("/models")
     async def list(self, req: web.Request) -> web.Response:
         """HTTP handler to list available models.
 
@@ -103,6 +107,7 @@ class ModelView:
         models = [m.to_dict() async for m in self.models.all()]
         return web.json_response(list(models))
 
+    @routing.urlto("/models/{name}/{tag}")
     async def delete(self, req: web.Request) -> web.Response:
         """Handler that removes a model."""
         name = req.match_info.get("name")
@@ -114,6 +119,7 @@ class ModelView:
             raise make_not_found_response(reason=e)
         return web.Response(status=web.HTTPOk.status_code)
 
+    @routing.urlto("/models/{name}/{tag}")
     async def export(self, req: web.Request) -> web.Response:
         name = req.match_info.get("name")
         tag = req.match_info.get("tag")

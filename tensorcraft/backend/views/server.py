@@ -3,6 +3,7 @@ import tensorcraft
 from aiohttp import web
 
 from tensorcraft.backend import model
+from tensorcraft.backend.views import routing
 
 
 class ServerView:
@@ -11,6 +12,7 @@ class ServerView:
     def __init__(self, models: model.AbstractStorage) -> None:
         self.models = models
 
+    @routing.urlto("/status")
     async def status(self, req: web.Request) -> web.Response:
         """Handler that returns server status."""
         return web.json_response(dict(
