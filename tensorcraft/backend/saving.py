@@ -17,6 +17,7 @@ from tensorcraft import asynclib
 from tensorcraft import errors
 from tensorcraft import signal
 from tensorcraft.backend import model
+from tensorcraft.backend import experiment
 
 
 def query_by_name_and_tag(name: str, tag: str):
@@ -35,7 +36,7 @@ def query_by_id(uid: uuid.UUID):
     return tinydb.Query().id == uid
 
 
-class FsMetadata:
+class FsModelsMetadata:
     """A file-based database with JSON encoding for models metadata."""
 
     @classmethod
@@ -84,13 +85,13 @@ class FsMetadata:
     @asynclib.asynccontextmanager
     async def write_locked(self):
         async with self._rw_lock.writer_lock:
-            db = FsMetadata()
+            db = FsModelsMetadata()
             db._db = self._db
             db._rw_lock = aiorwlock.RWLock(fast=True)
             yield db
 
 
-class FsStorage(model.AbstractStorage):
+class FsModelsStorage(model.AbstractStorage):
     """Storage of models based on ordinary file system.
 
     Implementation saves the models as unpacked TensorFlow SaveModel
@@ -108,7 +109,7 @@ class FsStorage(model.AbstractStorage):
 
         self.logger = logger
         self.loader = loader
-        self.meta = FsMetadata.new(path)
+        self.meta = FsModelsMetadata.new(path)
         self.models_path = path.joinpath("models")
 
         self._on_delete = signal.Signal()
@@ -276,3 +277,31 @@ class FsStorage(model.AbstractStorage):
 
         coro = asynclib.create_tar(fileobj=writer, path=m.path)
         await self.await_in_thread(coro)
+
+
+class FsExperimentsStorage(experiment.AbstractStorage):
+
+    @classmethod
+    def new(cls,
+            path: pathlib.Path,
+            logger: logging.Logger = tensorcraft.logging.internal_logger):
+        self = cls()
+        logger.info("Using file storage experiment engine")
+
+        self.logger = logger
+        self.rwlock = aiorwlock.RWLock()
+        self.db = tinydb.TinyDB(path=path.joinpath("experiments.json"),
+                                default_table="experiments")
+
+    async def close(self) -> None:
+        async with self.rwlock.writer_lock:
+            self.db.close()
+
+    async def save(self, e: experiment.Experiment) -> experiment.Experiment:
+        """Save the given experiment."""
+
+    async def save_epoch(self, name: str, epoch: experiment.Epoch) -> None:
+        """Add epoch with generated metrics to the experiment."""
+
+    async def load(self, name: str) -> experiment.Experiment:
+        """Load experiment with the given name."""

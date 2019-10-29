@@ -63,3 +63,23 @@ class AbstractStorage(metaclass=ABCMeta):
 
         The persistence guarantee is defined by the implementation.
         """
+
+    @abstractmethod
+    async def save_epoch(self, name: str, epoch: Epoch) -> None:
+        """Save the epoch with metrics.
+
+        Add a new epoch to the experiment, after execution count of epochs
+        for the experiment referenced by eid should be increased by one.
+
+        Args:
+            name -- experiment name.
+            epoch -- experiment epoch.
+        """
+
+    @abstractmethod
+    async def load(self, name: str) -> Experiment:
+        """Load the experiment.
+
+        Args:
+            name -- experiment name.
+        """

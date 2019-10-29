@@ -16,7 +16,7 @@ from tensorcraft import arglib
 from tensorcraft import tlslib
 from tensorcraft.backend import views
 from tensorcraft.backend import model
-from tensorcraft.backend import modelrt
+from tensorcraft.backend import saving
 from tensorcraft.logging import internal_logger
 
 
@@ -45,7 +45,7 @@ class Server:
         # fallback to the server-default execution strategy.
         loader = model.Loader(strategy=strategy, logger=logger)
 
-        storage = modelrt.FsStorage.new(path=data_root, loader=loader)
+        storage = saving.FsModelsStorage.new(path=data_root, loader=loader)
         models = await model.Cache.new(storage=storage, preload=preload)
 
         self.app = aiohttp.web.Application(client_max_size=1024**10)

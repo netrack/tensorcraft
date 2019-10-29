@@ -6,7 +6,7 @@ import unittest
 import unittest.mock
 
 from tensorcraft.backend import model
-from tensorcraft.backend import modelrt
+from tensorcraft.backend import saving
 from tests import asynctest
 from tests import kerastest
 
@@ -23,15 +23,15 @@ class TestModelRuntime(asynctest.AsyncTestCase):
     @asynctest.unittest_run_loop
     async def test_save(self):
         loader = model.Loader("no")
-        fs = modelrt.FsStorage.new(path=self.workpath, loader=loader)
+        fs = saving.FsModelsStorage.new(path=self.workpath, loader=loader)
 
         async with kerastest.crossentropy_model_tar("n", "t") as tarpath:
             async with aiofiles.open(tarpath, "rb") as model_tar:
                 stream = io.BytesIO(await model_tar.read())
                 m = await fs.save("n", "t", stream)
 
-        d1 = await fs.meta.get(modelrt.query_by_name_and_tag("n", "t"))
-        d2 = await fs.meta.get(modelrt.query_by_name_and_tag("n", "latest"))
+        d1 = await fs.meta.get(saving.query_by_name_and_tag("n", "t"))
+        d2 = await fs.meta.get(saving.query_by_name_and_tag("n", "latest"))
 
         self.assertEqual(d1["id"], d2["id"])
         self.assertTrue(m.loaded)
