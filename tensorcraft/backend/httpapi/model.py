@@ -6,7 +6,7 @@ from typing import Union
 
 from tensorcraft import errors
 from tensorcraft.backend import model
-from tensorcraft.backend.views import routing
+from tensorcraft.backend.httpapi import routing
 
 
 _ConflictReason = Union[errors.DuplicateError, errors.LatestTagError]

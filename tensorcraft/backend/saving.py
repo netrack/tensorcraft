@@ -292,16 +292,32 @@ class FsExperimentsStorage(experiment.AbstractStorage):
         self.rwlock = aiorwlock.RWLock()
         self.db = tinydb.TinyDB(path=path.joinpath("experiments.json"),
                                 default_table="experiments")
+        return self
 
     async def close(self) -> None:
         async with self.rwlock.writer_lock:
             self.db.close()
 
-    async def save(self, e: experiment.Experiment) -> experiment.Experiment:
+    async def save(self, e: experiment.Experiment) -> None:
         """Save the given experiment."""
+        async with self.rwlock.writer_lock:
+            self.db.upsert(e.asdict(), query_by_name(e.name))
+
+    def query_experiment(self, name: str) -> experiment.Experiment:
+        doc = self.db.get(query_by_name(name))
+        if doc is None:
+            raise Exception(f"experiment '{name}' not found")
+
+        return experiment.Experiment.from_dict(uid=doc.pop("id"), **doc)
 
     async def save_epoch(self, name: str, epoch: experiment.Epoch) -> None:
         """Add epoch with generated metrics to the experiment."""
+        async with self.rwlock.writer_lock:
+            e = self.query_experiment(name)
+            e.epochs.append(epoch)
+            self.db.upsert(e.asdict(), query_by_name(e.name))
 
     async def load(self, name: str) -> experiment.Experiment:
         """Load experiment with the given name."""
+        async with self.rwlock.reader_lock:
+            return self.query_experiment(name)
