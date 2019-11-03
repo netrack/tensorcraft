@@ -81,3 +81,19 @@ class ModelCheckpoint(callbacks.Callback):
 
         # Update tag after successfull model publish.
         self.tag = tag
+
+
+class EpochCallback(callbacks.Callback):
+    """Publish metrics of model on each epoch end."""
+
+    def __init__(self,
+                 experiment_name: str,
+                 service_url: str = "http://localhost:5678") -> None:
+        super().__init__()
+
+        self.experiment_name = experiment_name
+        self.client = client.Client.new(service_url=service_url)
+
+    def on_epoch_end(self, epoch, logs=None) -> None:
+        pass
+

@@ -36,3 +36,7 @@ class ExperimentView:
         e = await self.experiments.load(name)
 
         return web.json_response(e.asdict())
+
+    @routing.urlto("/experiments/{name}/epochs")
+    async def create_epoch(self, req: web.Request) -> web.Response:
+        pass

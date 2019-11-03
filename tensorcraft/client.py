@@ -10,7 +10,7 @@ from tensorcraft import arglib
 from tensorcraft import errors
 from tensorcraft import tlslib
 
-from typing import Union, Dict, IO
+from typing import Dict, IO, Sequence, Union
 from urllib.parse import urlparse, urlunparse
 
 
@@ -134,3 +134,22 @@ class Client:
             url = "{0}/status".format(self.service_url)
             resp = await session.get(url)
             return await resp.json()
+
+    # TODO: move experiments API to the separate client.
+    async def create_experiment(self, name: str) -> None:
+        async with aiohttp.ClientSession() as session:
+            url = f"{self.service_url}/experiments/{name}"
+
+            await session.put(url, json=dict(name=name),
+                              headers=self.default_headers,
+                              ssl_context=self.ssl_context)
+
+    async def create_epoch(self,
+                           experiment_name: str,
+                           metrics: Sequence[Dict]) -> None:
+        async with aiohttp.ClientSession() as session:
+            url = f"{self.service_url}/experiments/{name}/epochs"
+
+            await session.put(url, json=dict(metrics=metrics),
+                              headers=self.default_headers,
+                              ssl_context=self.ssl_context)

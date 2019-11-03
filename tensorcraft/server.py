@@ -14,7 +14,7 @@ from typing import Awaitable
 
 from tensorcraft import arglib
 from tensorcraft import tlslib
-from tensorcraft.backend import httpapi 
+from tensorcraft.backend import httpapi
 from tensorcraft.backend import model
 from tensorcraft.backend import saving
 from tensorcraft.logging import internal_logger
@@ -83,6 +83,7 @@ class Server:
 
             # Server-related endpoints.
             aiohttp.web.get(server_view.status.url, route(server_view.status)),
+            aiohttp.web.static("/ui", "static"),
         ])
 
         setup(self.app)
