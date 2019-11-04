@@ -31,11 +31,12 @@ class Epoch(NamedTuple):
     metrics: Sequence[Metric]
 
     @classmethod
+    def new(cls, metrics=Sequence[Dict]):
+        return cls([Metric.from_dict(**m) for m in metrics])
+
+    @classmethod
     def from_dict(cls, **kwargs):
-        metrics = kwargs.pop("metrics", [])
-        metrics = [Metric.from_dict(**m) for m in metrics]
-        self = cls(metrics=metrics, **kwargs)
-        return self
+        return cls([Metric.from_dict(**m) for m in kwargs.pop("metrics", [])])
 
     def asdict(self) -> Dict:
         return dict(metrics=[m.asdict() for m in self.metrics])
@@ -47,6 +48,7 @@ class Experiment:
     Attributes:
         id -- unique experiment identifier
         name -- name of the experiment
+        epochs -- a list of experiment epochs
     """
 
     @classmethod

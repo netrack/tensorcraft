@@ -10,7 +10,7 @@ from tests import kerastest
 
 class TestCallbacks(asynctest.AsyncTestCase):
 
-    @clienttest.unittest_mock_client("push")
+    @clienttest.unittest_mock_model_client("push")
     def test_on_epoch_end(self, push_mock):
         cb = callbacks.ModelCheckpoint(verbose=1)
 

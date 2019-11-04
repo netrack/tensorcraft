@@ -78,12 +78,14 @@ class Server:
             # Experiment-related endpoints.
             aiohttp.web.post(experiments_view.create.url,
                              route(experiments_view.create)),
+            aiohttp.web.post(experiments_view.create_epoch.url,
+                             route(experiments_view.create_epoch)),
             aiohttp.web.get(experiments_view.get.url,
                             route(experiments_view.get)),
 
             # Server-related endpoints.
             aiohttp.web.get(server_view.status.url, route(server_view.status)),
-            aiohttp.web.static("/ui", "static"),
+            # aiohttp.web.static("/ui", "static"),
         ])
 
         setup(self.app)

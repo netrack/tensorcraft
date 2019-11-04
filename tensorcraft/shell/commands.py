@@ -9,8 +9,17 @@ import yaml
 import tensorcraft.errors
 
 from tensorcraft import asynclib
-from tensorcraft.client import Client
+from tensorcraft import client
 from tensorcraft.shell import termlib
+
+
+class AsyncSubCommand(flagparse.SubCommand):
+
+    async def async_handle(self, args: flagparse.Namespace) -> None:
+        pass
+
+    def handle(self, args: flagparse.Namespace) -> None:
+        asynclib.run(self.async_handle(args))
 
 
 class Server(flagparse.SubCommand):
@@ -57,7 +66,7 @@ class Server(flagparse.SubCommand):
             raise flagparse.ExitError(1, f"Failed to start server. {e}.")
 
 
-class Push(flagparse.SubCommand):
+class Push(AsyncSubCommand):
     """Shell command to push model to the server."""
 
     name = "push"
@@ -85,7 +94,7 @@ class Push(flagparse.SubCommand):
               default=argparse.SUPPRESS,
               help="model location"))]
 
-    def handle(self, args: flagparse.Namespace) -> None:
+    async def async_handle(self, args: flagparse.Namespace) -> None:
         print(f"loading model {args.name}:{args.tag}")
 
         try:
@@ -94,18 +103,16 @@ class Push(flagparse.SubCommand):
             if not tarfile.is_tarfile(str(args.path)):
                 raise ValueError(f"{args.path} is not a tar file")
 
-            client = Client.new(**args.__dict__)
-
             asyncreader = asynclib.reader(args.path)
             reader = termlib.async_progress(args.path, asyncreader)
-            coro = client.push(args.name, args.tag, reader)
 
-            asynclib.run(coro)
+            async with client.Model.new(**args.__dict__) as models:
+                await models.push(args.name, args.tag, reader)
         except Exception as e:
             raise flagparse.ExitError(1, f"Failed to push model. {e}")
 
 
-class Remove(flagparse.SubCommand):
+class Remove(AsyncSubCommand):
     """Shell command to remove the model from server."""
 
     name = "remove"
@@ -127,12 +134,10 @@ class Remove(flagparse.SubCommand):
               type=str,
               help="model tag"))]
 
-    def handle(self, args: flagparse.Namespace) -> None:
-        client = Client.new(**args.__dict__)
-        coro = client.remove(args.name, args.tag)
-
+    async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
-            asynclib.run(coro)
+            async with client.Model.new(**args.__dict__) as models:
+                await models.remove(args.name, args.tag)
         except tensorcraft.errors.NotFoundError as e:
             if not args.quiet:
                 raise flagparse.ExitError(1, f"{e}")
@@ -140,7 +145,7 @@ class Remove(flagparse.SubCommand):
             raise flagparse.ExitError(1, f"Failed to remove model. {e}.")
 
 
-class List(flagparse.SubCommand):
+class List(AsyncSubCommand):
     """Shell command to list models from the server."""
 
     name = "list"
@@ -151,18 +156,16 @@ class List(flagparse.SubCommand):
 
     arguments = []
 
-    def handle(self, args: flagparse.Namespace) -> None:
-        client = Client.new(**args.__dict__)
-        coro = client.list()
-
+    async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
-            for model in asynclib.run(coro):
-                print("{name}:{tag}".format(**model))
+            async with client.Model.new(**args.__dict__) as models:
+                for model in await models.list():
+                    print("{name}:{tag}".format(**model))
         except Exception as e:
             raise flagparse.ExitError(1, f"Failed to list models. {e}.")
 
 
-class Export(flagparse.SubCommand):
+class Export(AsyncSubCommand):
     """Shell command to export model from the server."""
 
     name = "export"
@@ -190,19 +193,16 @@ class Export(flagparse.SubCommand):
               default=argparse.SUPPRESS,
               help="file location"))]
 
-    async def _handle(self, args: flagparse.Namespace) -> None:
-        async with aiofiles.open(args.path, "wb+") as writer:
-            client = Client.new(**args.__dict__)
-            await client.export(args.name, args.tag, writer)
-
-    def handle(self, args: flagparse.Namespace) -> None:
+    async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
-            asynclib.run(self._handle(args))
+            async with aiofiles.open(args.path, "wb+") as writer:
+                async with client.Model.new(**args.__dict__) as models:
+                    await models.export(args.name, args.tag, writer)
         except Exception as e:
             raise flagparse.ExitError(1, f"Failed to export model. {e}")
 
 
-class Status(flagparse.SubCommand):
+class Status(AsyncSubCommand):
     """Shell command to retrieve server status information."""
 
     name = "status"
@@ -213,12 +213,10 @@ class Status(flagparse.SubCommand):
 
     arguments = []
 
-    def handle(self, args: flagparse.Namespace) -> None:
-        client = Client.new(**args.__dict__)
-        coro = client.status()
-
+    async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
-            status = asynclib.run(coro)
-            print(yaml.dump(status), end="")
+            async with client.Model.new(**args.__dict__) as models:
+                status = await models.status()
+                print(yaml.dump(status), end="")
         except Exception as e:
             raise flagparse.ExitError(1, f"Failed to export model. {e}")

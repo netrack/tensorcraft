@@ -39,4 +39,13 @@ class ExperimentView:
 
     @routing.urlto("/experiments/{name}/epochs")
     async def create_epoch(self, req: web.Request) -> web.Response:
-        pass
+        name = req.match_info.get("name")
+
+        if not req.can_read_body:
+            raise web.HTTPBadRequest(text="request has no body")
+
+        body = await req.json()
+        epoch = experiment.Epoch.new(**body)
+
+        await self.exeriments.save_epoch(name, epoch)
+        return web.json_response(status=web.HTTPOk.status_code)
