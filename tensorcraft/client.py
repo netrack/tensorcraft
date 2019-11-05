@@ -56,7 +56,7 @@ class Session:
         await self.session.close()
 
     @classmethod
-    def new(cls, **kwargs):
+    async def new(cls, **kwargs):
         ssl_args = arglib.filter_callable_arguments(
             tlslib.create_client_ssl_context, **kwargs)
 
@@ -89,8 +89,8 @@ class Model:
         await self.session.close()
 
     @classmethod
-    def new(cls, **kwargs):
-        return cls(Session.new(**kwargs))
+    async def new(cls, **kwargs):
+        return cls(await Session.new(**kwargs))
 
     def make_error_from_response(self,
                                  resp: aiohttp.web.Response,

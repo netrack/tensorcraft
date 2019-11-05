@@ -106,7 +106,8 @@ class Push(AsyncSubCommand):
             asyncreader = asynclib.reader(args.path)
             reader = termlib.async_progress(args.path, asyncreader)
 
-            async with client.Model.new(**args.__dict__) as models:
+            models_client = await client.Model.new(**args.__dict__)
+            async with models_client as models:
                 await models.push(args.name, args.tag, reader)
         except Exception as e:
             raise flagparse.ExitError(1, f"Failed to push model. {e}")
@@ -136,7 +137,8 @@ class Remove(AsyncSubCommand):
 
     async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
-            async with client.Model.new(**args.__dict__) as models:
+            models_client = await client.Model.new(**args.__dict__)
+            async with models_client as models:
                 await models.remove(args.name, args.tag)
         except tensorcraft.errors.NotFoundError as e:
             if not args.quiet:
@@ -158,7 +160,8 @@ class List(AsyncSubCommand):
 
     async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
-            async with client.Model.new(**args.__dict__) as models:
+            models_client = await client.Model.new(**args.__dict__)
+            async with models_client as models:
                 for model in await models.list():
                     print("{name}:{tag}".format(**model))
         except Exception as e:
@@ -196,7 +199,8 @@ class Export(AsyncSubCommand):
     async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
             async with aiofiles.open(args.path, "wb+") as writer:
-                async with client.Model.new(**args.__dict__) as models:
+                models_client = await client.Model.new(**args.__dict__)
+                async with models_client as models:
                     await models.export(args.name, args.tag, writer)
         except Exception as e:
             raise flagparse.ExitError(1, f"Failed to export model. {e}")
@@ -215,7 +219,8 @@ class Status(AsyncSubCommand):
 
     async def async_handle(self, args: flagparse.Namespace) -> None:
         try:
-            async with client.Model.new(**args.__dict__) as models:
+            models_client = await client.Model.new(**args.__dict__)
+            async with models_client as models:
                 status = await models.status()
                 print(yaml.dump(status), end="")
         except Exception as e:

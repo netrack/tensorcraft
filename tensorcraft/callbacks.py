@@ -1,3 +1,4 @@
+import asyncio
 import pathlib
 import semver
 import tarfile
@@ -31,12 +32,18 @@ class _RemoteCallback(callbacks.Callback):
                  tlskey: pathlib.Path = "key.pem"):
         super().__init__()
 
-        self.session = client.Session.new(service_url=service_url,
-                                          tls=tls,
-                                          tlsverify=tlsverify,
-                                          tlscacert=tlscacert,
-                                          tlscert=tlscert,
-                                          tlskey=tlskey)
+        self.service_url = service_url
+        self.tls = tls
+        self.tlsverify = tlsverify
+        self.tlscacert = tlscacert
+        self.tlscert = tlscert
+        self.tlskey = tlskey
+
+    def new_session(self):
+        return client.Session.new(
+            service_url=self.service_url, tls=self.tls,
+            tlsverify=self.tlsverify, tlscacert=self.tlscacert,
+            tlscert=self.tlscert, tlskey=self.tlskey)
 
 
 class ModelCheckpoint(_RemoteCallback):
@@ -52,12 +59,19 @@ class ModelCheckpoint(_RemoteCallback):
 
     def __init__(self, name: str = None, tag: str = "0.0.0",
                  verbose: int = 0, **kwargs) -> None:
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.name = name
         self.tag = tag
         self.verbose = verbose
-        self.models = client.Model(self.session)
+
+    def on_train_begin(self, logs=None) -> None:
+        self.loop = asyncio.get_event_loop()
+        session = self.loop.run_until_complete(self.new_session())
+        self.models = client.Model(session)
+
+    def on_train_end(self, logs=None) -> None:
+        self.loop.run_until_complete(self.models.session.close())
 
     def on_epoch_end(self, epoch, logs=None) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -87,27 +101,24 @@ class ModelCheckpoint(_RemoteCallback):
                 print("\nEpoch {0:5d}: pushing model {1}:{2}".
                       format(epoch + 1, name, tag))
 
-            coro = self.models.push(name, tag, asyncreader)
-            asynclib.run(coro)
+            task = self.models.push(name, tag, asyncreader)
+            self.loop.run_until_complete(task)
 
         # Update tag after successful model publish.
         self.tag = tag
-
-    def on_train_end(self, logs=None) -> None:
-        self.models.close()
 
 
 class ExperimentCallback(_RemoteCallback):
     """Publish metrics of model on each epoch end."""
 
-    def __init__(self, experiment_name: str) -> None:
-        super().__init__()
+    def __init__(self, experiment_name: str, **kwargs) -> None:
+        super().__init__(**kwargs)
 
         self.experiment_name = experiment_name
         self.experiemnts = client.Experiment(self.session)
 
     def on_epoch_end(self, epoch, logs=None) -> None:
-        # TODO: add support of non-eager execution.
+        # Add support of non-eager execution.
         metrics = [dict(name=m.name, value=m.result().numpy())
                    for m in self.model.metrics]
 
