@@ -3,7 +3,7 @@ import tensorcraft
 from aiohttp import web
 
 from tensorcraft.backend import model
-from tensorcraft.backend.views import routing
+from tensorcraft.backend.httpapi import routing
 
 
 class ServerView:

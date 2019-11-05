@@ -84,8 +84,7 @@ class Model:
 
     @classmethod
     def from_dict(cls, **kwargs):
-        self = cls(**kwargs)
-        return self
+        return cls(**kwargs)
 
     @classmethod
     def new(cls, name: str, tag: str, root: pathlib.Path,

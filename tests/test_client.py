@@ -7,19 +7,20 @@ import unittest
 
 from tensorcraft import asynclib
 from tensorcraft import errors
-from tensorcraft.client import Client
+from tensorcraft import client
 from tests import asynctest
 from tests import cryptotest
 from tests import kerastest
 
 
-class TestClient(asynctest.AsyncTestCase):
+class TestModelClient(asynctest.AsyncTestCase):
 
     @asynclib.asynccontextmanager
     async def handle_request(self,
                              method: str,
                              path: str,
-                             resp: aiohttp.web.Response = None) -> Client:
+                             resp: aiohttp.web.Response = None,
+                             ) -> client.Model:
         resp = aiohttp.web.Response() if resp is None else resp
         handler_mock = asynctest.AsyncMagicMock(return_value=resp)
 
@@ -31,7 +32,7 @@ class TestClient(asynctest.AsyncTestCase):
 
         async with aiohttptest.TestServer(app) as server:
             service_url = str(server.make_url(""))
-            yield Client(service_url)
+            yield client.Model(client.Session(service_url))
 
         handler_mock.assert_called()
 

@@ -14,7 +14,7 @@ from typing import Awaitable
 
 from tensorcraft import arglib
 from tensorcraft import tlslib
-from tensorcraft.backend import views
+from tensorcraft.backend import httpapi
 from tensorcraft.backend import model
 from tensorcraft.backend import saving
 from tensorcraft.logging import internal_logger
@@ -48,17 +48,22 @@ class Server:
         storage = saving.FsModelsStorage.new(path=data_root, loader=loader)
         models = await model.Cache.new(storage=storage, preload=preload)
 
+        # Experiments storage based on regular file system.
+        experiments = saving.FsExperimentsStorage.new(path=data_root)
+
         self.app = aiohttp.web.Application(client_max_size=1024**10)
 
         self.app.on_startup.append(cls.app_callback(self.pid.create))
         self.app.on_response_prepare.append(self._prepare_response)
         self.app.on_shutdown.append(cls.app_callback(storage.close))
+        self.app.on_shutdown.append(cls.app_callback(experiments.close))
         self.app.on_shutdown.append(cls.app_callback(self.pid.close))
 
         route = partial(route_to, api_version=tensorcraft.__apiversion__)
 
-        models_view = views.ModelView(models)
-        server_view = views.ServerView(models)
+        models_view = httpapi.ModelView(models)
+        server_view = httpapi.ServerView(models)
+        experiments_view = httpapi.ExperimentView(experiments)
 
         self.app.add_routes([
             # Model-related endpoints.
@@ -70,8 +75,17 @@ class Server:
             aiohttp.web.post(models_view.predict.url,
                              route(models_view.predict)),
 
+            # Experiment-related endpoints.
+            aiohttp.web.post(experiments_view.create.url,
+                             route(experiments_view.create)),
+            aiohttp.web.post(experiments_view.create_epoch.url,
+                             route(experiments_view.create_epoch)),
+            aiohttp.web.get(experiments_view.get.url,
+                            route(experiments_view.get)),
+
             # Server-related endpoints.
             aiohttp.web.get(server_view.status.url, route(server_view.status)),
+            # aiohttp.web.static("/ui", "static"),
         ])
 
         setup(self.app)

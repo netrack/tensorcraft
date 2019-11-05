@@ -48,7 +48,7 @@ def main():
              commands.Remove,
              commands.List,
              commands.Export,
-             commands.Status]).parse()
+             commands.Status]).parse(trace=True)
 
 
 if __name__ == "__main__":

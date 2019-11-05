@@ -1,3 +1,4 @@
+import asyncio
 import pathlib
 import semver
 import tarfile
@@ -10,15 +11,11 @@ from tensorcraft import asynclib
 from tensorcraft import client
 
 
-class ModelCheckpoint(callbacks.Callback):
-    """Publish model to server after every epoch.
+class _RemoteCallback(callbacks.Callback):
+    """Callback with default session for communication with remote server.
 
     Args:
-        name -- name of the model, when name is not given, name attribute of
-                the model will be used
-        tag -- tag of the model, by default is "0.0.0", every iteration will
-               bump build version, so on the next epoch version will be
-               "0.0.0+build1"; tag must be valid semantic version
+        service_url -- endpoint to the server
         tls -- true to use TLS
         tlsverify -- use TLS and verify remote
         tlscacert -- trust certs signed only by this CA
@@ -27,10 +24,7 @@ class ModelCheckpoint(callbacks.Callback):
     """
 
     def __init__(self,
-                 name: str = None,
-                 tag: str = "0.0.0",
-                 verbose: int = 0,
-                 service_url: str = "http://localhost:5678",
+                 service_url: str = "localhost:5678",
                  tls: bool = False,
                  tlsverify: bool = False,
                  tlscacert: pathlib.Path = "cacert.pem",
@@ -38,15 +32,46 @@ class ModelCheckpoint(callbacks.Callback):
                  tlskey: pathlib.Path = "key.pem"):
         super().__init__()
 
+        self.service_url = service_url
+        self.tls = tls
+        self.tlsverify = tlsverify
+        self.tlscacert = tlscacert
+        self.tlscert = tlscert
+        self.tlskey = tlskey
+
+    def new_session(self):
+        return client.Session.new(
+            service_url=self.service_url, tls=self.tls,
+            tlsverify=self.tlsverify, tlscacert=self.tlscacert,
+            tlscert=self.tlscert, tlskey=self.tlskey)
+
+
+class ModelCheckpoint(_RemoteCallback):
+    """Publish model to server after every epoch.
+
+    Args:
+        name -- name of the model, when name is not given, name attribute of
+                the model will be used
+        tag -- tag of the model, by default is "0.0.0", every iteration will
+               bump build version, so on the next epoch version will be
+               "0.0.0+build1"; tag must be valid semantic version
+    """
+
+    def __init__(self, name: str = None, tag: str = "0.0.0",
+                 verbose: int = 0, **kwargs) -> None:
+        super().__init__(**kwargs)
+
         self.name = name
         self.tag = tag
         self.verbose = verbose
-        self.client = client.Client.new(service_url=service_url,
-                                        tls=tls,
-                                        tlsverify=tlsverify,
-                                        tlscacert=tlscacert,
-                                        tlscert=tlscert,
-                                        tlskey=tlskey)
+
+    def on_train_begin(self, logs=None) -> None:
+        self.loop = asyncio.get_event_loop()
+        session = self.loop.run_until_complete(self.new_session())
+        self.models = client.Model(session)
+
+    def on_train_end(self, logs=None) -> None:
+        self.loop.run_until_complete(self.models.session.close())
 
     def on_epoch_end(self, epoch, logs=None) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -76,8 +101,25 @@ class ModelCheckpoint(callbacks.Callback):
                 print("\nEpoch {0:5d}: pushing model {1}:{2}".
                       format(epoch + 1, name, tag))
 
-            coro = self.client.push(name, tag, asyncreader)
-            asynclib.run(coro)
+            task = self.models.push(name, tag, asyncreader)
+            self.loop.run_until_complete(task)
 
-        # Update tag after successfull model publish.
+        # Update tag after successful model publish.
         self.tag = tag
+
+
+class ExperimentCallback(_RemoteCallback):
+    """Publish metrics of model on each epoch end."""
+
+    def __init__(self, experiment_name: str, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+        self.experiment_name = experiment_name
+        self.experiemnts = client.Experiment(self.session)
+
+    def on_epoch_end(self, epoch, logs=None) -> None:
+        # Add support of non-eager execution.
+        metrics = [dict(name=m.name, value=m.result().numpy())
+                   for m in self.model.metrics]
+
+        self.experiments.trace(experiment_name, metrics)
