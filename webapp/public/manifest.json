@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "TensorCraft",
+  "name": "Self-hosted storage for models and experiments",
   "icons": [
     {
       "src": "favicon.ico",
