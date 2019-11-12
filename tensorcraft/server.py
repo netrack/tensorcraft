@@ -96,6 +96,7 @@ class Server:
     async def _prepare_response(self, request, response):
         server = "TensorCraft/{0}".format(tensorcraft.__version__)
         response.headers["Server"] = server
+        response.headers["Access-Control-Allow-Origin"] = "*"
 
     @classmethod
     def start(cls, **kwargs):

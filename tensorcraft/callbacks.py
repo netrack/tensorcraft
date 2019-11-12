@@ -45,6 +45,13 @@ class _RemoteCallback(callbacks.Callback):
             tlsverify=self.tlsverify, tlscacert=self.tlscacert,
             tlscert=self.tlscert, tlskey=self.tlskey)
 
+    def on_train_begin(self, logs=None) -> None:
+        self.loop = asyncio.get_event_loop()
+        self.session = self.loop.run_until_complete(self.new_session())
+
+    def on_train_end(self, logs=None) -> None:
+        self.loop.run_until_complete(self.session.close())
+
 
 class ModelCheckpoint(_RemoteCallback):
     """Publish model to server after every epoch.
@@ -66,12 +73,8 @@ class ModelCheckpoint(_RemoteCallback):
         self.verbose = verbose
 
     def on_train_begin(self, logs=None) -> None:
-        self.loop = asyncio.get_event_loop()
-        session = self.loop.run_until_complete(self.new_session())
-        self.models = client.Model(session)
-
-    def on_train_end(self, logs=None) -> None:
-        self.loop.run_until_complete(self.models.session.close())
+        super().on_train_begin(logs)
+        self.models = client.Model(self.session)
 
     def on_epoch_end(self, epoch, logs=None) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -109,12 +112,19 @@ class ModelCheckpoint(_RemoteCallback):
 
 
 class ExperimentCallback(_RemoteCallback):
-    """Publish metrics of model on each epoch end."""
+    """Publish metrics of model on each epoch end.
+
+    Args:
+        experiment_name -- name of the experiment used to trace metrics.
+    """
 
     def __init__(self, experiment_name: str, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self.experiment_name = experiment_name
+
+    def on_train_begin(self, logs=None) -> None:
+        super().on_train_begin(logs)
         self.experiemnts = client.Experiment(self.session)
 
     def on_epoch_end(self, epoch, logs=None) -> None:
@@ -122,4 +132,5 @@ class ExperimentCallback(_RemoteCallback):
         metrics = [dict(name=m.name, value=m.result().numpy())
                    for m in self.model.metrics]
 
-        self.experiments.trace(experiment_name, metrics)
+        task = self.experiments.trace(experiment_name, metrics)
+        self.loop.run_until_complete(task)
