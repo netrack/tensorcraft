@@ -303,12 +303,15 @@ class FsExperimentsStorage(experiment.AbstractStorage):
         async with self.rwlock.writer_lock:
             self.db.upsert(e.asdict(), query_by_name(e.name))
 
+    def build_experiment_from_document(self,
+                                       doc: Dict) -> experiment.Experiment:
+        return experiment.Experiment.from_dict(uid=doc.pop("id"), **doc)
+
     def query_experiment(self, name: str) -> experiment.Experiment:
         doc = self.db.get(query_by_name(name))
         if doc is None:
             raise Exception(f"experiment '{name}' not found")
-
-        return experiment.Experiment.from_dict(uid=doc.pop("id"), **doc)
+        return self.build_experiment_from_document(doc)
 
     async def save_epoch(self, name: str, epoch: experiment.Epoch) -> None:
         """Add epoch with generated metrics to the experiment."""
@@ -321,3 +324,8 @@ class FsExperimentsStorage(experiment.AbstractStorage):
         """Load experiment with the given name."""
         async with self.rwlock.reader_lock:
             return self.query_experiment(name)
+
+    async def all(self) -> Sequence[experiment.Experiment]:
+        async with self.rwlock.reader_lock:
+            for doc in self.db.all():
+                yield self.build_experiment_from_document(doc)

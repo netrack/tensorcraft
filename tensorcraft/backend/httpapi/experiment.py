@@ -30,6 +30,11 @@ class ExperimentView:
         await self.experiments.save(e)
         return web.json_response(status=web.HTTPCreated.status_code)
 
+    @routing.urlto("/experiments")
+    async def list(self, req: web.Request) -> web.Response:
+        experiments = [e.asdict() async for e in self.experiments.all()]
+        return web.json_response(list(experiments))
+
     @routing.urlto("/experiments/{name}")
     async def get(self, req: web.Request) -> web.Response:
         name = req.match_info.get("name")
