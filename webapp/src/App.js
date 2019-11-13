@@ -1,5 +1,5 @@
 import React from 'react';
-import { Placeholder, Menu, Container, Segment, List } from 'semantic-ui-react';
+import { Icon, Placeholder, Menu, Container, Segment, List } from 'semantic-ui-react';
 import Moment from 'react-moment';
 
 
@@ -47,6 +47,9 @@ class App extends React.Component {
       return ([
         <Segment inverted attached compact size='mini'>
           <Menu inverted text compact size='large'>
+            <Menu.Item>
+              <Icon name="lab" size="large"/>
+            </Menu.Item>
             <Menu.Item
               name='models'
               content=<b>Models</b>
@@ -58,7 +61,7 @@ class App extends React.Component {
           </Menu>
         </Segment>,
         <Container>
-        <Segment>
+        <Segment vertical>
         <List divided relaxed>
           {state.models.map(model => {
             const createdAt = new Date(model.created_at*1000);
