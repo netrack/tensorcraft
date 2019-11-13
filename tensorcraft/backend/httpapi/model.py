@@ -104,7 +104,12 @@ class ModelView:
         Args:
             req -- empty request
         """
-        models = [m.to_dict() async for m in self.models.all()]
+        models = [
+            dict(name="mlp_3", tag="0.0.1", created_at=1573636383),
+            dict(name="mlp_3", tag="0.0.2", created_at=1573637383),
+            dict(name="mlp_3", tag="1.2.1", created_at=1573638383),
+        ]
+        #models = [m.to_dict() async for m in self.models.all()]
         return web.json_response(list(models))
 
     @routing.urlto("/models/{name}/{tag}")
