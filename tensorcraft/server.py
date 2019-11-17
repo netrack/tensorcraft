@@ -82,6 +82,8 @@ class Server:
                              route(experiments_view.create_epoch)),
             aiohttp.web.get(experiments_view.get.url,
                             route(experiments_view.get)),
+            aiohttp.web.get(experiments_view.list.url,
+                            route(experiments_view.list)),
 
             # Server-related endpoints.
             aiohttp.web.get(server_view.status.url, route(server_view.status)),

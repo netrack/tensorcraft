@@ -109,3 +109,7 @@ class AbstractStorage(metaclass=ABCMeta):
         Args:
             name -- experiment name
         """
+
+    @abstractmethod
+    async def all(self) -> Sequence[Experiment]:
+        """Load all experiments."""
