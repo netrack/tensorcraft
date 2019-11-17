@@ -59,7 +59,7 @@ export default class ModelsList extends React.Component {
           <Icon name='search'/>
           <Message.Content>
             <Message.Header>There are no uploaded models yet.</Message.Header>
-          Refer to the TensorCraft <a href=''>documentation</a> to get instruction how to upload model.
+          Refer to the TensorCraft <a href='/'>documentation</a> to get instruction how to upload model.
           </Message.Content>
         </Message>
       );

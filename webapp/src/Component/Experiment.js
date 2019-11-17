@@ -58,7 +58,7 @@ export default class ExperimentsList extends React.Component {
           <Icon name='search'/>
           <Message.Content>
             <Message.Header>There are no experiments yet.</Message.Header>
-          Refer to the TensorCraft <a href=''>documentation</a> to get instruction how to setup experiment.
+          Refer to the TensorCraft <a href='/'>documentation</a> to get instruction how to setup experiment.
           </Message.Content>
         </Message>
       );
