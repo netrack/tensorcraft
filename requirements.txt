@@ -20,7 +20,7 @@ Keras-Applications==1.0.8
 Keras-Preprocessing==1.1.0
 Markdown==3.1.1
 multidict==4.5.2
-numpy==1.16.4
+numpy==1.22.0
 pid==2.2.3
 protobuf==3.8.0
 pyyaml==5.4
